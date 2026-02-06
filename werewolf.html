@@ -17,21 +17,21 @@
             --bg-card: #1a1a1a;
             --bg-card-hover: #252525;
             --border: #3a3a3a;
-            --text: #f5f5f5;
-            --text-dim: #a0a0a0;
-            --accent: #d4af37;
-            --accent-glow: rgba(212, 175, 55, 0.3);
-            --villager: #c0c0c0;
-            --werewolf: #dc2626;
-            --werewolf-glow: rgba(220, 38, 38, 0.3);
-            --success: #d4af37;
-            --warning: #ffd700;
-            --silver: #c0c0c0;
-            --gold: #d4af37;
+            --text: #e8e8e8;
+            --text-dim: #909090;
+            --accent: #c0c0c0;
+            --accent-glow: rgba(192, 192, 192, 0.3);
+            --villager: #b8b8b8;
+            --werewolf: #666666;
+            --werewolf-glow: rgba(100, 100, 100, 0.3);
+            --success: #a0a0a0;
+            --warning: #888888;
+            --silver: #888888;
+            --gold: #b0b0b0;
         }
 
         body {
-            background: linear-gradient(180deg, #000000 0%, #0a0a1a 50%, #1a1a2e 100%);
+            background: #000000;
             color: var(--text);
             font-family: 'Crimson Pro', serif;
             min-height: 100vh;
@@ -48,10 +48,101 @@
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background-image: 
-                radial-gradient(2px 2px at 10% 20%, white, transparent),
+            width: 100%;
+            height: 100%;
+            background-image:
+                radial-gradient(1px 1px at 10% 20%, white, transparent),
+                radial-gradient(1px 1px at 15% 35%, white, transparent),
+                radial-gradient(2px 2px at 20% 50%, white, transparent),
+                radial-gradient(1px 1px at 25% 15%, white, transparent),
+                radial-gradient(1px 1px at 30% 70%, white, transparent),
+                radial-gradient(2px 2px at 35% 40%, white, transparent),
+                radial-gradient(1px 1px at 40% 85%, white, transparent),
+                radial-gradient(1px 1px at 45% 10%, white, transparent),
+                radial-gradient(2px 2px at 50% 60%, white, transparent),
+                radial-gradient(1px 1px at 55% 25%, white, transparent),
+                radial-gradient(1px 1px at 60% 75%, white, transparent),
+                radial-gradient(2px 2px at 65% 45%, white, transparent),
+                radial-gradient(1px 1px at 70% 90%, white, transparent),
+                radial-gradient(1px 1px at 75% 5%, white, transparent),
+                radial-gradient(2px 2px at 80% 55%, white, transparent),
+                radial-gradient(1px 1px at 85% 30%, white, transparent),
+                radial-gradient(1px 1px at 90% 80%, white, transparent),
+                radial-gradient(1px 1px at 95% 65%, white, transparent),
+                radial-gradient(1px 1px at 5% 45%, white, transparent),
+                radial-gradient(2px 2px at 12% 82%, white, transparent),
+                radial-gradient(1px 1px at 18% 8%, white, transparent),
+                radial-gradient(1px 1px at 22% 95%, white, transparent),
+                radial-gradient(2px 2px at 28% 28%, white, transparent),
+                radial-gradient(1px 1px at 32% 62%, white, transparent),
+                radial-gradient(1px 1px at 38% 12%, white, transparent),
+                radial-gradient(2px 2px at 42% 78%, white, transparent),
+                radial-gradient(1px 1px at 48% 42%, white, transparent),
+                radial-gradient(1px 1px at 52% 88%, white, transparent),
+                radial-gradient(2px 2px at 58% 18%, white, transparent),
+                radial-gradient(1px 1px at 62% 52%, white, transparent),
+                radial-gradient(1px 1px at 68% 72%, white, transparent),
+                radial-gradient(2px 2px at 72% 38%, white, transparent),
+                radial-gradient(1px 1px at 78% 92%, white, transparent),
+                radial-gradient(1px 1px at 82% 22%, white, transparent),
+                radial-gradient(2px 2px at 88% 68%, white, transparent),
+                radial-gradient(1px 1px at 92% 48%, white, transparent),
+                radial-gradient(1px 1px at 3% 58%, white, transparent),
+                radial-gradient(2px 2px at 8% 88%, white, transparent),
+                radial-gradient(1px 1px at 13% 32%, white, transparent),
+                radial-gradient(1px 1px at 17% 98%, white, transparent),
+                radial-gradient(2px 2px at 23% 4%, white, transparent),
+                radial-gradient(1px 1px at 27% 66%, white, transparent),
+                radial-gradient(1px 1px at 33% 22%, white, transparent),
+                radial-gradient(2px 2px at 37% 86%, white, transparent),
+                radial-gradient(1px 1px at 43% 48%, white, transparent),
+                radial-gradient(1px 1px at 47% 14%, white, transparent),
+                radial-gradient(2px 2px at 53% 76%, white, transparent),
+                radial-gradient(1px 1px at 57% 36%, white, transparent),
+                radial-gradient(1px 1px at 63% 94%, white, transparent),
+                radial-gradient(2px 2px at 67% 58%, white, transparent),
+                radial-gradient(1px 1px at 73% 8%, white, transparent),
+                radial-gradient(1px 1px at 77% 44%, white, transparent),
+                radial-gradient(2px 2px at 83% 84%, white, transparent),
+                radial-gradient(1px 1px at 87% 24%, white, transparent),
+                radial-gradient(1px 1px at 93% 74%, white, transparent),
+                radial-gradient(1px 1px at 97% 54%, white, transparent),
+                radial-gradient(1px 1px at 6% 16%, white, transparent),
+                radial-gradient(2px 2px at 11% 96%, white, transparent),
+                radial-gradient(1px 1px at 16% 56%, white, transparent),
+                radial-gradient(1px 1px at 21% 26%, white, transparent),
+                radial-gradient(2px 2px at 26% 92%, white, transparent),
+                radial-gradient(1px 1px at 31% 38%, white, transparent),
+                radial-gradient(1px 1px at 36% 68%, white, transparent),
+                radial-gradient(2px 2px at 41% 2%, white, transparent),
+                radial-gradient(1px 1px at 46% 82%, white, transparent),
+                radial-gradient(1px 1px at 51% 46%, white, transparent),
+                radial-gradient(2px 2px at 56% 12%, white, transparent),
+                radial-gradient(1px 1px at 61% 78%, white, transparent),
+                radial-gradient(1px 1px at 66% 34%, white, transparent),
+                radial-gradient(2px 2px at 71% 96%, white, transparent),
+                radial-gradient(1px 1px at 76% 62%, white, transparent),
+                radial-gradient(1px 1px at 81% 18%, white, transparent),
+                radial-gradient(2px 2px at 86% 88%, white, transparent),
+                radial-gradient(1px 1px at 91% 52%, white, transparent),
+                radial-gradient(1px 1px at 96% 28%, white, transparent),
+                radial-gradient(1px 1px at 4% 72%, white, transparent),
+                radial-gradient(2px 2px at 9% 42%, white, transparent),
+                radial-gradient(1px 1px at 14% 6%, white, transparent);
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.8;
+        }
+
+        body > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        body::after {
+            content: '';
                 radial-gradient(1px 1px at 72% 30%, white, transparent),
                 radial-gradient(1px 1px at 48% 55%, white, transparent),
                 radial-gradient(2px 2px at 90% 15%, white, transparent),
@@ -97,6 +188,7 @@
             text-align: center;
             margin-bottom: 1.5rem;
             animation: fadeInDown 0.8s ease-out;
+            position: relative;
         }
 
         h1 {
@@ -213,11 +305,11 @@
         }
 
         .character-card.selected-villager {
-            background: rgba(212, 175, 55, 0.25);
+            background: rgba(200, 200, 200, 0.25);
         }
 
         .character-card.selected-werewolf {
-            background: rgba(220, 38, 38, 0.25);
+            background: rgba(160, 160, 160, 0.25);
         }
 
         .character-card.revealed-villager {
@@ -337,7 +429,7 @@
         .character-statement {
             font-size: 1.1rem;
             line-height: 1.5;
-            color: #0d0d0d;
+            color: #3a3a3a;
             background: white;
             border-radius: 12px;
             padding: 0.65rem 0.85rem;
@@ -394,40 +486,40 @@
         }
 
         .btn-villager {
-            border-color: #8b7328;
-            background: #8b7328;
+            border-color: #808080;
+            background: #808080;
             color: #0d0d0d;
         }
 
         .btn-villager:hover {
-            background: #a88c35;
-            border-color: #a88c35;
+            background: #909090;
+            border-color: #909090;
         }
 
         .btn-villager.active {
-            background: var(--gold);
-            border-color: var(--gold);
+            background: #808080;
+            border-color: #ffffff;
             animation: buttonFlash 0.3s ease-out;
-            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.7);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8);
         }
 
         .btn-werewolf {
-            border-color: #8b1a1a;
-            background: #8b1a1a;
-            color: #0d0d0d;
+            border-color: #000000;
+            background: #000000;
+            color: #ffffff;
         }
 
         .btn-werewolf:hover {
-            background: #a82222;
-            border-color: #a82222;
+            background: #1a1a1a;
+            border-color: #1a1a1a;
         }
 
         .btn-werewolf.active {
-            background: var(--werewolf);
-            border-color: var(--werewolf);
-            color: #0d0d0d;
+            background: #000000;
+            border-color: #a0a0a0;
+            color: #ffffff;
             animation: buttonFlash 0.3s ease-out;
-            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.7);
+            box-shadow: 0 0 0 3px rgba(160, 160, 160, 0.8);
         }
 
         .controls {
@@ -644,8 +736,15 @@
 </head>
 <body>
     <header>
-        <h1>Werewolf Daily</h1>
-        <p class="subtitle">Daily Deduction Puzzle</p>
+        <img src="werewolf_logo_transp.png" alt="Werewolf Nightly" class="logo" style="max-width: 600px; width: 90%; height: auto; margin: 0 auto 1rem; display: block;">
+        <p class="subtitle" style="display: none;">Daily Deduction Puzzle</p>
+        
+        <!-- Debug buttons in top right -->
+        <div style="position: absolute; top: 0.5rem; right: 0.5rem; display: flex; gap: 0.5rem;">
+            <button class="debug-btn" id="debugNextBtn" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">Next</button>
+            <button class="debug-btn" onclick="document.getElementById('csvImportFile').click()" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: #4a9eff;">Load</button>
+            <input type="file" id="csvImportFile" accept=".csv" style="display:none" onchange="importCustomPuzzle(event)">
+        </div>
     </header>
 
     <div class="puzzle-info">
@@ -670,7 +769,6 @@
     <div class="controls">
         <button class="submit-btn" id="submitBtn">Check</button>
         <button class="reset-btn" id="resetBtn">Reset</button>
-        <button class="debug-btn" id="debugNextBtn">Next Puzzle (Debug)</button>
     </div>
 
     <div id="resultArea"></div>
@@ -1219,6 +1317,48 @@
         ];
 
         let currentPuzzleIndex = 0;
+        
+        // Check if there's a test puzzle from the editor (within last 10 seconds)
+        const testPuzzleData = localStorage.getItem('werewolfTestPuzzle');
+        const testPuzzleTime = localStorage.getItem('werewolfTestPuzzleTime');
+        
+        console.log('Checking for test puzzle...', testPuzzleData ? 'Found!' : 'Not found');
+        
+        if (testPuzzleData && testPuzzleTime) {
+            const timeDiff = Date.now() - parseInt(testPuzzleTime);
+            console.log('Test puzzle age (ms):', timeDiff);
+            
+            // Only load if less than 10 seconds old (fresh test)
+            if (timeDiff < 10000) {
+                try {
+                    const testPuzzle = JSON.parse(testPuzzleData);
+                    testPuzzle.date = new Date().toDateString();
+                    testPuzzle.rule = "Identify the werewolves, before they kill more villagers! Werewolves always lie. Villagers always tell the truth.";
+                    
+                    console.log('Loading test puzzle:', testPuzzle);
+                    
+                    allPuzzles.unshift(testPuzzle); // Add test puzzle at the beginning
+                    
+                    // Clear the test puzzle so it doesn't reload on refresh
+                    localStorage.removeItem('werewolfTestPuzzle');
+                    localStorage.removeItem('werewolfTestPuzzleTime');
+                    
+                    // Show a notice
+                    setTimeout(() => {
+                        const notice = document.createElement('div');
+                        notice.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #4a9eff; color: white; padding: 1rem 1.5rem; border-radius: 8px; font-family: "IM Fell English SC", serif; z-index: 1000; animation: fadeIn 0.5s;';
+                        notice.textContent = '🎮 Testing puzzle from editor';
+                        document.body.appendChild(notice);
+                        setTimeout(() => notice.remove(), 3000);
+                    }, 500);
+                } catch (e) {
+                    console.error('Failed to load test puzzle:', e);
+                }
+            } else {
+                console.log('Test puzzle too old, ignoring');
+            }
+        }
+        
         let dailyPuzzle = allPuzzles[currentPuzzleIndex];
         let selections = {};
         let revealed = false;
@@ -1260,7 +1400,19 @@
                 'Cop': '👮',
                 'Tarot Reader': '🔮',
                 'Coward': '😨',
-                'Dead body': '💀'
+                'Dead body': '💀',
+                'Librarian': '📚',
+                'Gossip': '🗣️',
+                'Citizen': '🧑‍💼',
+                'Village Idiot': '🤪',
+                'Innkeeper': '🏠',
+                'Soldier': '🪖',
+                'Companion': '🤝',
+                'Chaperone': '👩‍👧',
+                'Savant': '🧠',
+                'Fool': '🃏',
+                'Matchmaker (Pair)': '💑',
+                'Custom': '✏️'
             };
             
             // Use emoji portrait or default person
@@ -1376,21 +1528,21 @@
         }
 
         function checkSolution() {
-            revealed = true;
+            // Auto-assign unselected characters as villagers
+            dailyPuzzle.characters.forEach((char, index) => {
+                if (char.isDead) return; // Skip dead
+                if (!selections[index]) {
+                    selections[index] = 'villager';
+                }
+            });
+            
             hasChecked = true;
             let correct = 0;
             let total = 0;
 
             dailyPuzzle.characters.forEach((char, index) => {
-                const card = document.querySelectorAll('.character-card')[index];
                 const userSelection = selections[index];
                 const actualType = char.isWerewolf ? 'werewolf' : 'villager';
-
-                if (char.isWerewolf) {
-                    card.classList.add('revealed-werewolf');
-                } else {
-                    card.classList.add('revealed-villager');
-                }
 
                 // Only count living characters in the score
                 if (!char.isDead) {
@@ -1420,6 +1572,9 @@
 
             // Show reveal solution button after first check
             document.getElementById('revealControls').style.display = 'flex';
+            
+            // Re-render to update UI with auto-assigned selections
+            initGame();
         }
 
         function revealSolution() {
@@ -1485,6 +1640,90 @@
             
             // Reinitialize the game with new puzzle
             initGame();
+        }
+
+        function importCustomPuzzle(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n').slice(1); // Skip header
+                
+                const characters = [];
+                let werewolfCount = 0;
+                
+                lines.forEach((line, index) => {
+                    if (!line.trim()) return;
+                    
+                    // Parse CSV (handle quoted fields)
+                    const regex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+                    const parts = line.split(regex);
+                    
+                    if (parts.length < 4) return;
+                    
+                    const isWerewolf = parts[2].toLowerCase().includes('yes');
+                    if (isWerewolf) werewolfCount++;
+                    
+                    const char = {
+                        name: parts[0].trim(),
+                        gender: parts[1].includes('♂') ? 'M' : (parts[1].includes('♀') ? 'F' : 'NB'),
+                        role: parts[4] ? parts[4].trim() : 'Unknown',
+                        roleAbility: parts[5] ? parts[5].trim() : '',
+                        statement: parts[3].replace(/^"|"$/g, '').trim(), // Remove quotes
+                        isWerewolf: isWerewolf,
+                        isDead: false // Can be enhanced later
+                    };
+                    
+                    characters.push(char);
+                });
+                
+                if (characters.length === 0) {
+                    alert('No valid characters found in CSV!');
+                    return;
+                }
+                
+                // Create custom puzzle
+                const customPuzzle = {
+                    date: new Date().toDateString(),
+                    rule: "Identify the werewolves, before they kill more villagers! Werewolves always lie. Villagers always tell the truth.",
+                    werewolfCount: werewolfCount,
+                    characters: characters
+                };
+                
+                // Add to beginning of puzzles array
+                allPuzzles.unshift(customPuzzle);
+                currentPuzzleIndex = 0;
+                dailyPuzzle = allPuzzles[0];
+                
+                // Reset state
+                selections = {};
+                revealed = false;
+                hasChecked = false;
+                
+                // Clear results and hide reveal button
+                document.getElementById('resultArea').innerHTML = '';
+                document.getElementById('revealControls').style.display = 'none';
+                
+                // Update puzzle number
+                document.getElementById('puzzleNumber').textContent = `Puzzle 1`;
+                
+                // Initialize with custom puzzle
+                initGame();
+                
+                // Show notification
+                const notice = document.createElement('div');
+                notice.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #4a9eff; color: white; padding: 1rem 1.5rem; border-radius: 8px; font-family: "IM Fell English SC", serif; z-index: 1000;';
+                notice.textContent = `✅ Loaded custom puzzle (${characters.length} characters)`;
+                document.body.appendChild(notice);
+                setTimeout(() => notice.remove(), 3000);
+                
+                // Clear file input
+                event.target.value = '';
+            };
+            
+            reader.readAsText(file);
         }
 
         document.getElementById('submitBtn').addEventListener('click', checkSolution);

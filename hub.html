@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GALAXY BRAIN - Game Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-space: #0a0a0a;
+            --bg-card: #1a1a1a;
+            --gold: #d4af37;
+            --gold-glow: rgba(212, 175, 55, 0.3);
+            --text-primary: #ffffff;
+            --text-secondary: #999999;
+            --border: #333333;
+        }
+
+        @keyframes starfield {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-100vh); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px var(--card-glow); }
+            50% { box-shadow: 0 0 40px var(--card-glow), 0 0 60px var(--card-glow); }
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-space);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Starfield Background */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 200vh;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: starfield 80s linear infinite;
+        }
+
+        .star.small {
+            width: 1px;
+            height: 1px;
+            opacity: 0.4;
+        }
+
+        .star.medium {
+            width: 2px;
+            height: 2px;
+            opacity: 0.6;
+        }
+
+        .star.large {
+            width: 3px;
+            height: 3px;
+            opacity: 0.8;
+            animation: starfield 80s linear infinite, pulse 3s ease-in-out infinite;
+        }
+
+        /* Gradient Overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at 50% 20%, rgba(212, 175, 55, 0.08), transparent 60%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem 1rem;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .logo {
+            font-family: 'Inter', sans-serif;
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            font-weight: 800;
+            letter-spacing: 0.15em;
+            background: linear-gradient(135deg, #ffffff, var(--gold), #ffffff);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient-shift 8s ease infinite;
+            margin-bottom: 0;
+        }
+
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* Games Grid */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .game-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, transparent, rgba(212, 175, 55, 0.05));
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+        .game-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--gold);
+            box-shadow: 0 8px 40px var(--gold-glow);
+        }
+
+        .game-card:hover::before {
+            opacity: 1;
+        }
+
+        .game-icon {
+            font-size: 3rem;
+            margin-bottom: 0.75rem;
+            display: block;
+            filter: grayscale(0.3);
+        }
+
+        .game-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .game-description {
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .game-meta {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .meta-tag {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .play-button {
+            background: var(--gold);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #000000;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: all 0.3s;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .play-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .play-button:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .play-button:hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 20px var(--gold-glow);
+        }
+
+        /* Coming Soon Cards */
+        .game-card.coming-soon {
+            opacity: 0.6;
+            cursor: default;
+        }
+
+        .game-card.coming-soon:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .coming-soon-label {
+            background: transparent;
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 1.5rem 0;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+        }
+
+        .footer-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2.5rem;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-number {
+            font-family: 'Inter', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--gold);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem 0.75rem;
+            }
+
+            .games-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .footer-stats {
+                gap: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Starfield Background -->
+    <div class="stars" id="starfield"></div>
+
+    <div class="container">
+        <header>
+            <h1 class="logo">GALAXY BRAIN</h1>
+        </header>
+
+        <div class="games-grid">
+            <!-- Werewolf Daily -->
+            <div class="game-card" data-game="werewolf">
+                <span class="game-icon">🌙</span>
+                <h2 class="game-title">Werewolf Daily</h2>
+                <p class="game-description">
+                    Unravel the mystery. Read villagers' testimonies and deduce who among them is the werewolf.
+                </p>
+                <div class="game-meta">
+                    <span class="meta-tag">Logic</span>
+                    <span class="meta-tag">Deduction</span>
+                    <span class="meta-tag">Daily</span>
+                </div>
+                <button class="play-button" onclick="playGame('werewolf.html')">Launch Game</button>
+            </div>
+
+            <!-- FOLDERDLE -->
+            <div class="game-card" data-game="folderdle">
+                <span class="game-icon">📁</span>
+                <h2 class="game-title">FOLDERDLE</h2>
+                <p class="game-description">
+                    Navigate the retro file system. Organize folders in the right order before time runs out.
+                </p>
+                <div class="game-meta">
+                    <span class="meta-tag">Puzzle</span>
+                    <span class="meta-tag">Retro</span>
+                    <span class="meta-tag">Daily</span>
+                </div>
+                <button class="play-button" onclick="playGame('folder.html')">Launch Game</button>
+            </div>
+
+            <!-- Caveman Movies -->
+            <div class="game-card" data-game="caveman">
+                <span class="game-icon">🦴</span>
+                <h2 class="game-title">Caveman Movies</h2>
+                <p class="game-description">
+                    Guess the movie from primitive cave drawings. How cultured is your prehistoric brain?
+                </p>
+                <div class="game-meta">
+                    <span class="meta-tag">Movies</span>
+                    <span class="meta-tag">Guessing</span>
+                    <span class="meta-tag">Daily</span>
+                </div>
+                <button class="play-button" onclick="playGame('caveman.html')">Launch Game</button>
+            </div>
+
+            <!-- NERDSTACK -->
+            <div class="game-card" data-game="nerdstack">
+                <span class="game-icon">⚡</span>
+                <h2 class="game-title">NERDSTACK</h2>
+                <p class="game-description">
+                    Build the ultimate tech stack. Rank programming languages, frameworks, and tools by popularity.
+                </p>
+                <div class="game-meta">
+                    <span class="meta-tag">Tech</span>
+                    <span class="meta-tag">Ranking</span>
+                    <span class="meta-tag">Daily</span>
+                </div>
+                <button class="play-button" onclick="playGame('stack.html')">Launch Game</button>
+            </div>
+
+            <!-- Coming Soon Slots -->
+            <div class="game-card coming-soon">
+                <span class="game-icon">🎮</span>
+                <h2 class="game-title">New Game</h2>
+                <p class="game-description">
+                    Something exciting is brewing in the galaxy. Stay tuned for the next puzzle adventure.
+                </p>
+                <div class="game-meta">
+                    <span class="meta-tag">Mystery</span>
+                    <span class="meta-tag">TBA</span>
+                </div>
+                <div class="coming-soon-label">Coming Soon</div>
+            </div>
+
+            <div class="game-card coming-soon">
+                <span class="game-icon">🚀</span>
+                <h2 class="game-title">New Game</h2>
+                <p class="game-description">
+                    The galaxy is expanding. More brain-bending challenges on the horizon.
+                </p>
+                <div class="game-meta">
+                    <span class="meta-tag">Mystery</span>
+                    <span class="meta-tag">TBA</span>
+                </div>
+                <div class="coming-soon-label">Coming Soon</div>
+            </div>
+        </div>
+
+        <footer>
+            <div class="footer-stats">
+                <div class="stat">
+                    <div class="stat-number">4</div>
+                    <div class="stat-label">Games Live</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">∞</div>
+                    <div class="stat-label">Possibilities</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">24/7</div>
+                    <div class="stat-label">Brain Power</div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Generate starfield
+        function createStarfield() {
+            const starfield = document.getElementById('starfield');
+            const starCount = 200;
+
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                const size = Math.random();
+                
+                if (size < 0.6) {
+                    star.className = 'star small';
+                } else if (size < 0.9) {
+                    star.className = 'star medium';
+                } else {
+                    star.className = 'star large';
+                }
+
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 200 + 'vh';
+                star.style.animationDelay = -Math.random() * 80 + 's';
+                
+                starfield.appendChild(star);
+            }
+        }
+
+        // Play game function
+        function playGame(filename) {
+            window.location.href = filename;
+        }
+
+        // Initialize
+        createStarfield();
+
+        // Add subtle parallax effect on mouse move
+        document.addEventListener('mousemove', (e) => {
+            const stars = document.querySelectorAll('.star');
+            const moveX = (e.clientX - window.innerWidth / 2) * 0.01;
+            const moveY = (e.clientY - window.innerHeight / 2) * 0.01;
+            
+            stars.forEach((star, index) => {
+                const depth = index % 3 + 1;
+                star.style.transform = `translate(${moveX * depth}px, ${moveY * depth}px)`;
+            });
+        });
+    </script>
+</body>
+</html>

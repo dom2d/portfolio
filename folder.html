@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FOLDERDLE - Daily Puzzle</title>
+    <title>FACTCHECK - Daily Puzzle</title>
     <style>
         @font-face {
             font-family: 'Martius';
@@ -56,32 +56,6 @@
             text-shadow: 1px 1px 0px #000000;
         }
         
-        .instructions {
-            background: rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-            padding: 20px 25px;
-            margin: 15px auto;
-            max-width: 800px;
-            text-align: left;
-            font-size: 14px;
-            line-height: 1.6;
-            color: #000000;
-        }
-        
-        .instructions strong {
-            color: #000000;
-            font-weight: 800;
-        }
-        
-        .instructions ul {
-            margin: 10px 0 0 20px;
-            padding: 0;
-        }
-        
-        .instructions li {
-            margin: 5px 0;
-        }
-        
         .game-area {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -96,6 +70,7 @@
             flex-direction: column;
             min-width: 0;
             gap: 10px;
+            cursor: pointer;
         }
         
         .documents-pile {
@@ -114,7 +89,6 @@
             padding: 10px;
             background: rgba(0, 0, 0, 0.1);
             border-radius: 4px;
-            cursor: pointer;
         }
         
         .documents-grid:empty::before {
@@ -126,47 +100,17 @@
             padding: 20px;
         }
         
-        .left-controls {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        
-        .checks-display {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.1);
-            padding: 12px;
-            border-radius: 8px;
-        }
-        
-        .check-icon {
-            font-size: 24px;
-            transition: opacity 0.3s;
-            color: #000000;
-        }
-        
-        .check-icon.used {
-            opacity: 0.2;
-        }
-        
-        .button-row {
-            display: flex;
-            gap: 10px;
-        }
-        
         .document {
             background: #ffffff;
-            border: none;
-            border-radius: 8px;
+            border-top: 2px solid #dfdfdf;
+            border-left: 2px solid #dfdfdf;
+            border-right: 2px solid #808080;
+            border-bottom: 2px solid #808080;
             padding: 10px 8px;
             cursor: move;
             font-size: 13px;
             text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            box-shadow: none;
             min-height: 45px;
             display: flex;
             align-items: center;
@@ -186,7 +130,7 @@
         
         .document:hover {
             transform: none;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            box-shadow: none;
         }
         
         .document.dragging {
@@ -196,7 +140,6 @@
         .document.selected {
             border: 3px solid #ff0000;
             background: #ffff00;
-            box-shadow: 0 3px 8px rgba(255,0,0,0.4);
         }
         
         .document.in-slot {
@@ -207,47 +150,28 @@
             position: absolute;
             top: 2px;
             right: 2px;
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             background: #ff0000;
             color: #ffffff;
             border: 1px solid #000000;
             border-radius: 0;
-            font-size: 14px;
-            line-height: 18px;
+            font-size: 12px;
+            line-height: 16px;
             font-weight: 700;
             cursor: pointer;
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
             padding: 0;
-            z-index: 10;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s;
-        }
-        
-        .document.in-slot .remove-btn {
-            opacity: 1;
-            pointer-events: auto;
         }
         
         .remove-btn:hover {
             background: #cc0000;
         }
         
-        .remove-btn:active {
-            background: #990000;
-        }
-        
-        .slot.drag-over {
-            background: #ffff00;
-            border: 2px solid #000000;
-        }
-        
-        .slot.drag-over-filled {
-            background: #ff9900;
-            border: 3px solid #ff0000;
+        .document.in-slot .remove-btn {
+            display: flex;
         }
         
         /* RIGHT COLUMN - Subject Frames */
@@ -259,21 +183,23 @@
         }
         
         .subject-frame {
-            background: #ffd35c;
-            border-radius: 10px;
+            background: #0000aa;
+            border-top: 2px solid #ffffff;
+            border-left: 2px solid #ffffff;
+            border-right: 2px solid #000000;
+            border-bottom: 2px solid #000000;
             padding: 0;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+            box-shadow: none;
             width: 100%;
         }
         
         .subject-header {
-            background: #ffd35c;
+            background: #0000aa;
             padding: 15px;
-            border-radius: 10px 10px 0 0;
             font-size: 28px;
             font-weight: 900;
             text-align: center;
-            color: #000000;
+            color: #ffffff;
             letter-spacing: 2px;
             font-family: 'Martius', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
             line-height: 1.3;
@@ -286,8 +212,7 @@
         }
         
         .subject-body {
-            background: #ffd35c;
-            border-radius: 0 0 10px 10px;
+            background: #c0c0c0;
             padding: 15px;
         }
         
@@ -298,14 +223,16 @@
         }
         
         .slot {
-            background: rgba(255, 255, 255, 0.5);
-            border: 2px dashed rgba(0, 0, 0, 0.3);
-            border-radius: 6px;
+            background: #ffffff;
+            border-top: 2px solid #808080;
+            border-left: 2px solid #808080;
+            border-right: 2px solid #dfdfdf;
+            border-bottom: 2px solid #dfdfdf;
             min-height: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: rgba(0, 0, 0, 0.5);
+            color: #808080;
             font-size: 12px;
             transition: all 0.2s;
             padding: 5px;
@@ -313,13 +240,8 @@
         }
         
         .slot.drag-over {
-            background: rgba(255, 255, 0, 0.5);
+            background: #ffff00;
             border: 2px solid #000000;
-        }
-        
-        .slot.drag-over-filled {
-            background: rgba(255, 153, 0, 0.5);
-            border: 3px solid #ff0000;
         }
         
         .slot.filled {
@@ -336,8 +258,11 @@
         .subject-status {
             margin-top: 10px;
             padding: 8px;
-            background: rgba(255, 255, 255, 0.7);
-            border-radius: 6px;
+            background: #ffffff;
+            border-top: 2px solid #dfdfdf;
+            border-left: 2px solid #dfdfdf;
+            border-right: 2px solid #808080;
+            border-bottom: 2px solid #808080;
             text-align: center;
             font-size: 14px;
             font-weight: 700;
@@ -355,6 +280,15 @@
         }
         
         /* Controls */
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
         .btn {
             font-family: inherit;
             font-size: 16px;
@@ -362,38 +296,63 @@
             padding: 12px 32px;
             background: #c0c0c0;
             color: #000000;
-            border: none;
-            border-radius: 8px;
+            border-top: 2px solid #ffffff;
+            border-left: 2px solid #ffffff;
+            border-right: 2px solid #000000;
+            border-bottom: 2px solid #000000;
             cursor: pointer;
-            transition: background 0.2s;
-            flex: 1;
+            transition: none;
         }
         
         .btn:hover {
-            background: #d0d0d0;
+            background: #dfdfdf;
             transform: none;
         }
         
         .btn:active {
-            background: #b0b0b0;
+            border-top: 2px solid #000000;
+            border-left: 2px solid #000000;
+            border-right: 2px solid #ffffff;
+            border-bottom: 2px solid #ffffff;
         }
         
         .btn-primary {
-            background: #000000;
+            background: #0000aa;
             color: #ffffff;
         }
         
         .btn-primary:hover {
-            background: #333333;
+            background: #0000cc;
         }
         
-        .btn-primary:active {
-            background: #000000;
+        .checks-display {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: #c0c0c0;
+            padding: 8px 12px;
+            border-top: 2px solid #808080;
+            border-left: 2px solid #808080;
+            border-right: 2px solid #dfdfdf;
+            border-bottom: 2px solid #dfdfdf;
+        }
+        
+        .check-icon {
+            font-size: 24px;
+            transition: opacity 0.3s;
+            color: #000000;
+        }
+        
+        .check-icon.used {
+            opacity: 0.2;
         }
         
         .result-box {
-            background: rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
+            background: #c0c0c0;
+            border-top: 2px solid #ffffff;
+            border-left: 2px solid #ffffff;
+            border-right: 2px solid #000000;
+            border-bottom: 2px solid #000000;
             padding: 30px;
             margin-top: 30px;
             text-align: center;
@@ -414,46 +373,6 @@
             color: #000000;
             margin-bottom: 10px;
         }
-        
-        .btn-reveal {
-            background: #ff0000;
-            color: #ffffff;
-            margin-top: 15px;
-            border-radius: 8px;
-        }
-        
-        .btn-reveal:hover {
-            background: #cc0000;
-        }
-        
-        .btn-reveal:active {
-            background: #990000;
-        }
-        
-        /* Confetti Animation */
-        .confetti {
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            background: #ff0000;
-            position: absolute;
-            animation: confetti-fall 3s linear forwards;
-            z-index: 10000;
-        }
-        
-        @keyframes confetti-fall {
-            to {
-                transform: translateY(100vh) rotate(360deg);
-                opacity: 0;
-            }
-        }
-        
-        .confetti:nth-child(2n) { background: #00ff00; }
-        .confetti:nth-child(3n) { background: #0000ff; }
-        .confetti:nth-child(4n) { background: #ffff00; }
-        .confetti:nth-child(5n) { background: #ff00ff; }
-        .confetti:nth-child(6n) { background: #00ffff; }
-        .confetti:nth-child(7n) { background: #ffffff; }
         
         .debug-btn {
             position: fixed;
@@ -552,19 +471,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="game-title">FOLDERDLE</div>
-            <div class="subtitle">Sort the facts into their correct folders</div>
-        </div>
-        
-        <div class="instructions">
-            <strong>HERE'S THE TWIST:</strong> You can see the folders, but their names are scrambled! 
-            <ul>
-                <li><strong>Click a fact</strong> to select it (it'll turn yellow)</li>
-                <li><strong>Click a slot</strong> to place it there</li>
-                <li><strong>Click the × button</strong> or the card itself to remove it</li>
-                <li><strong>Hit CHECK</strong> to see if you're right (you get 5 tries!)</li>
-                <li>Each check reveals more letters...</li>
-            </ul>
+            <div class="game-title">FACTCHECK</div>
+            <div class="subtitle">Sort the facts into their correct subject groups</div>
         </div>
         
         <div class="game-area">
@@ -576,26 +484,24 @@
                         <!-- Facts will be added here by JavaScript -->
                     </div>
                 </div>
-                
-                <div class="left-controls">
-                    <div class="checks-display">
-                        <span class="check-icon">✓</span>
-                        <span class="check-icon">✓</span>
-                        <span class="check-icon">✓</span>
-                        <span class="check-icon">✓</span>
-                        <span class="check-icon">✓</span>
-                    </div>
-                    <div class="button-row">
-                        <button class="btn btn-primary" id="checkBtn">CHECK</button>
-                        <button class="btn" id="resetBtn">RESET</button>
-                    </div>
-                </div>
             </div>
             
             <!-- RIGHT COLUMN: Subject Frames -->
             <div class="right-column" id="subjectFrames">
                 <!-- Subject frames will be added here by JavaScript -->
             </div>
+        </div>
+        
+        <div class="controls">
+            <div class="checks-display">
+                <span class="check-icon">✓</span>
+                <span class="check-icon">✓</span>
+                <span class="check-icon">✓</span>
+                <span class="check-icon">✓</span>
+                <span class="check-icon">✓</span>
+            </div>
+            <button class="btn btn-primary" id="checkBtn">CHECK</button>
+            <button class="btn" id="resetBtn">RESET</button>
         </div>
         
         <div class="result-box" id="resultBox">
@@ -1281,33 +1187,25 @@
         
         function handleDragOver(e) {
             e.preventDefault();
-            const slot = e.currentTarget;
-            
-            // Different visual feedback if slot is already filled
-            if (slot.classList.contains('filled')) {
-                slot.classList.add('drag-over-filled');
-                slot.classList.remove('drag-over');
-            } else {
-                slot.classList.add('drag-over');
-                slot.classList.remove('drag-over-filled');
-            }
+            e.currentTarget.classList.add('drag-over');
         }
         
         function handleDragLeave(e) {
-            e.currentTarget.classList.remove('drag-over', 'drag-over-filled');
+            e.currentTarget.classList.remove('drag-over');
         }
         
         function handleDrop(e) {
             e.preventDefault();
             const slot = e.currentTarget;
-            slot.classList.remove('drag-over', 'drag-over-filled');
+            slot.classList.remove('drag-over');
             
             if (!draggedElement) return;
             
-            // If slot already has a card, return it to pile
+            // If slot already has a card, swap them
             const existingDoc = slot.querySelector('.document');
             if (existingDoc) {
-                returnCardToPile(existingDoc);
+                const pile = document.getElementById('documentsPile');
+                pile.appendChild(existingDoc);
             }
             
             // Remove from old parent
@@ -1319,7 +1217,6 @@
             slot.innerHTML = '';
             slot.appendChild(draggedElement);
             slot.classList.add('filled');
-            draggedElement.classList.add('in-slot');
         }
         
         // Touch handlers for mobile
@@ -1426,107 +1323,23 @@
                 revealProgress = 5;
                 updateSubjectNames();
                 
-                // Launch confetti!
-                launchConfetti();
-                
                 const resultBox = document.getElementById('resultBox');
                 const resultText = document.getElementById('resultText');
                 resultBox.className = 'result-box show victory';
                 resultText.innerHTML = `
-                    <div class="score">🎉 PERFECT! 🎉</div>
+                    <div class="score">PERFECT!</div>
                     <div>ALL FACTS CORRECTLY SORTED!</div>
                     <div style="margin-top: 10px; font-size: 18px;">CHECKS USED: ${5 - checksRemaining}/5</div>
                 `;
             } else if (checksRemaining === 0) {
-                // Reveal all names when out of checks
-                revealProgress = 5;
-                updateSubjectNames();
-                
                 const resultBox = document.getElementById('resultBox');
                 const resultText = document.getElementById('resultText');
                 resultBox.className = 'result-box show';
                 resultText.innerHTML = `
                     <div class="score" style="color: #ff0000;">OUT OF CHECKS!</div>
-                    <div>Keep trying or see the solution:</div>
-                    <button class="btn btn-reveal" id="revealBtn">REVEAL SOLUTION</button>
+                    <div>Keep trying - you can still solve it!</div>
                 `;
-                
-                // Add event listener to reveal button
-                document.getElementById('revealBtn').addEventListener('click', revealSolution);
             }
-        }
-        
-        function launchConfetti() {
-            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffffff'];
-            const confettiCount = 100;
-            
-            for (let i = 0; i < confettiCount; i++) {
-                setTimeout(() => {
-                    const confetti = document.createElement('div');
-                    confetti.className = 'confetti';
-                    confetti.style.position = 'fixed';
-                    confetti.style.left = Math.random() * 100 + 'vw';
-                    confetti.style.top = '-10px'; // Start from top of viewport
-                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
-                    confetti.style.animationDelay = Math.random() * 0.5 + 's';
-                    confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
-                    document.body.appendChild(confetti);
-                    
-                    // Remove after animation
-                    setTimeout(() => confetti.remove(), 4000);
-                }, i * 30);
-            }
-        }
-        
-        function revealSolution() {
-            // Move all cards to their correct positions
-            currentPuzzle.subjects.forEach((subject, subjectIndex) => {
-                subject.facts.forEach((fact, factIndex) => {
-                    // Find the card with this fact
-                    const allCards = document.querySelectorAll('.document');
-                    allCards.forEach(card => {
-                        if (card.textContent.trim().replace('×', '').trim() === fact.text) {
-                            // Find the correct slot
-                            const slot = document.querySelector(
-                                `.subject-slots[data-subject="${subjectIndex}"] .slot[data-slot="${factIndex}"]`
-                            );
-                            
-                            if (slot) {
-                                // Clear slot if occupied
-                                if (slot.classList.contains('filled')) {
-                                    const existingCard = slot.querySelector('.document');
-                                    if (existingCard) {
-                                        returnCardToPile(existingCard);
-                                    }
-                                }
-                                
-                                // Place card in slot
-                                slot.innerHTML = '';
-                                slot.appendChild(card);
-                                slot.classList.add('filled');
-                                card.classList.add('in-slot');
-                                card.classList.remove('selected');
-                            }
-                        }
-                    });
-                });
-            });
-            
-            // Update all statuses to show correct
-            currentPuzzle.subjects.forEach((subject, subjectIndex) => {
-                const status = document.getElementById(`status${subjectIndex}`);
-                status.textContent = `3/3 correct`;
-                status.classList.add('show', 'correct');
-            });
-            
-            // Update result box
-            const resultBox = document.getElementById('resultBox');
-            const resultText = document.getElementById('resultText');
-            resultBox.className = 'result-box show';
-            resultText.innerHTML = `
-                <div class="score">SOLUTION REVEALED</div>
-                <div>Now you know! Try the next puzzle to test yourself.</div>
-            `;
         }
         
         function resetGame() {

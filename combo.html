@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COMBOMASTER - Daily Card Puzzle</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+
+        .game-container {
+            background: #16213e;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 800px;
+            width: 100%;
+            border: 1px solid #2d3a52;
+        }
+
+        h1 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.75em;
+            color: #8b95a5;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #fff;
+            margin-top: 3px;
+        }
+
+        .coins-section {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .coins-label {
+            font-size: 0.75em;
+            color: #8b95a5;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .coins-display {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .coin {
+            width: 24px;
+            height: 24px;
+            background: #fbbf24;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #78350f;
+            font-size: 0.85em;
+        }
+
+        .coin.spent {
+            background: #374151;
+            color: #6b7280;
+        }
+
+        .played-cards {
+            margin-bottom: 15px;
+            min-height: 45px;
+            background: #0f1419;
+            border-radius: 6px;
+            padding: 10px;
+            border: 1px solid #2d3a52;
+        }
+
+        .played-cards-label {
+            text-align: center;
+            color: #8b95a5;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .played-cards-container {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            flex-wrap: wrap;
+            min-height: 30px;
+        }
+
+        .played-card-slot {
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 4px;
+            padding: 5px 10px;
+            min-width: 80px;
+            text-align: center;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .played-card-slot:hover {
+            background: #334155;
+            border-color: #ef4444;
+        }
+
+        .played-card-slot .slot-number {
+            position: absolute;
+            top: -6px;
+            left: -6px;
+            width: 16px;
+            height: 16px;
+            background: #64748b;
+            color: #fff;
+            border-radius: 50%;
+            font-size: 0.65em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .played-card-slot .card-name {
+            font-weight: 500;
+            font-size: 0.8em;
+            color: #e2e8f0;
+        }
+
+        .hand {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .card {
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            border-color: #64748b;
+            transform: translateY(-2px);
+        }
+
+        .card.selected {
+            border-color: #3b82f6;
+            background: #1e3a5f;
+        }
+
+        .card.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .card.disabled:hover {
+            transform: none;
+            border-color: #475569;
+        }
+
+        .card-cost {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            background: #fbbf24;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #78350f;
+            font-size: 0.9em;
+        }
+
+        .card-name {
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: #f1f5f9;
+            font-size: 0.9em;
+        }
+
+        .card-types {
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+            margin-bottom: 6px;
+        }
+
+        .card-type-badge {
+            font-size: 0.65em;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            background: #334155;
+            color: #cbd5e1;
+        }
+
+        .type-boom { background: #7c2d12; color: #fca5a5; }
+        .type-zap { background: #713f12; color: #fde68a; }
+        .type-wow { background: #4c1d95; color: #c4b5fd; }
+
+        .card-effect {
+            font-size: 0.75em;
+            color: #94a3b8;
+            line-height: 1.3;
+            flex-grow: 1;
+        }
+
+        .card-stars {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #334155;
+            color: #fbbf24;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        button:disabled {
+            background: #374151;
+            cursor: not-allowed;
+        }
+
+        .secondary-btn {
+            background: #6b7280;
+        }
+
+        .secondary-btn:hover {
+            background: #4b5563;
+        }
+
+        .tertiary-btn {
+            background: #059669;
+        }
+
+        .tertiary-btn:hover {
+            background: #047857;
+        }
+
+        .quaternary-btn {
+            background: #d97706;
+        }
+
+        .quaternary-btn:hover {
+            background: #b45309;
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 1em;
+            font-weight: 500;
+        }
+
+        .result.success {
+            background: #064e3b;
+            border: 1px solid #10b981;
+            color: #86efac;
+        }
+
+        .result.failure {
+            background: #7f1d1d;
+            border: 1px solid #ef4444;
+            color: #fca5a5;
+        }
+
+        .combo-breakdown {
+            margin-top: 10px;
+            padding: 10px;
+            background: #0f1419;
+            border-radius: 4px;
+            font-size: 0.85em;
+            text-align: left;
+            border: 1px solid #2d3a52;
+        }
+
+        .combo-line {
+            padding: 3px 0;
+            color: #cbd5e1;
+        }
+
+        @media (max-width: 600px) {
+            .hand {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .controls {
+                flex-wrap: wrap;
+            }
+
+            button {
+                font-size: 0.8em;
+                padding: 8px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>COMBOMASTER</h1>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Best Score</div>
+                <div class="stat-value" id="bestScore">—</div>
+            </div>
+        </div>
+
+        <div class="coins-section">
+            <div class="coins-label">Coins Available</div>
+            <div class="coins-display" id="coinsDisplay"></div>
+        </div>
+
+        <div id="playedCards" class="played-cards"></div>
+
+        <div class="hand" id="hand"></div>
+
+        <div class="controls">
+            <button id="validateBtn">Validate Combo</button>
+            <button class="secondary-btn" id="resetBtn">Reset</button>
+            <button class="tertiary-btn" id="revealBtn">Reveal Solution</button>
+            <button class="quaternary-btn" id="newPuzzleBtn">New Puzzle</button>
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // Card types and effects
+        const cardTypes = [
+            { name: "Fireball", cost: 1, baseStars: 6, types: ["boom"], effect: "+3★ for each BOOM card played" },
+            { name: "Blitz", cost: 0, baseStars: 1, types: ["zap"], effect: "-1★ for each other card played" },
+            { name: "Supernova", cost: 1, baseStars: 8, types: ["boom", "wow"], effect: "+2★ for each unique type" },
+            { name: "Quick Strike", cost: 1, baseStars: 3, types: ["zap"], effect: "+4★ if played first" },
+            { name: "Arcane Ritual", cost: 1, baseStars: 4, types: ["wow"], effect: "+2★ for each WOW card played" },
+            { name: "Ember", cost: 1, baseStars: 2, types: ["boom"], effect: "+5★ if adjacent to BOOM card" },
+            { name: "Spark", cost: 0, baseStars: 2, types: ["zap"], effect: "Halve★ of next card" },
+            { name: "Amplify", cost: 1, baseStars: 0, types: ["wow"], effect: "Double base★ of previous card" },
+            { name: "Chain Reaction", cost: 1, baseStars: 5, types: ["boom"], effect: "+1★ for each card played" },
+            { name: "Echo", cost: 1, baseStars: 1, types: ["wow"], effect: "Copy★ of previous card" },
+            { name: "Meteor", cost: 1, baseStars: 10, types: ["boom"], effect: "-2★ for each other card played" },
+            { name: "Rush", cost: 0, baseStars: 3, types: ["zap"], effect: "-2★ if any coins spent" },
+            { name: "Prismatic Burst", cost: 1, baseStars: 3, types: ["wow", "zap"], effect: "+3★ if both ZAP and WOW played" },
+            { name: "Inferno", cost: 1, baseStars: 7, types: ["boom"], effect: "Double base★ if next to BOOM" },
+            { name: "Flurry", cost: 1, baseStars: 2, types: ["zap"], effect: "+1★ for each card after this" },
+            { name: "Cosmic Bind", cost: 1, baseStars: 4, types: ["wow"], effect: "+5★ if played last" },
+            { name: "Barrage", cost: 1, baseStars: 3, types: ["boom", "zap"], effect: "+2★ if exactly 3 cards played" },
+            { name: "Lightning Rod", cost: 1, baseStars: 3, types: ["zap"], effect: "+3★ if adjacent to ZAP card" },
+            { name: "Miracle", cost: 1, baseStars: 6, types: ["wow"], effect: "+2★ for each different type" },
+            { name: "Detonation", cost: 1, baseStars: 5, types: ["boom"], effect: "+4★ if no ZAP cards played" },
+            { name: "Synergy", cost: 1, baseStars: 2, types: ["wow"], effect: "+1★ for each unique type played" },
+            { name: "Blaze", cost: 1, baseStars: 4, types: ["boom"], effect: "No bonus" },
+            { name: "Discount", cost: 1, baseStars: 1, types: ["zap"], effect: "Next card costs 1 less (min 0)" },
+            { name: "Vowel Counter", cost: 1, baseStars: 2, types: ["wow"], effect: "+1★ for each vowel in previous card name" },
+            { name: "Alphabet Ace", cost: 1, baseStars: 3, types: ["wow"], effect: "+2★ if previous card name starts with A-M" },
+            { name: "Letter Luck", cost: 1, baseStars: 2, types: ["zap"], effect: "+1★ per letter in this card's name" },
+            { name: "Palindrome", cost: 1, baseStars: 5, types: ["wow"], effect: "+6★ if total cards played is odd" },
+            { name: "Name Game", cost: 1, baseStars: 3, types: ["wow"], effect: "+1★ for each card with name length > 8" },
+        ];
+
+        const typeIcons = {
+            boom: "💥",
+            zap: "⚡",
+            wow: "✨"
+        };
+
+        let dailySeed;
+        let dailyHand;
+        let selectedCards = [];
+        let maxCoins = 3;
+        let customSeedOffset = 0; // For generating new puzzles
+
+        // Seeded random number generator
+        function seededRandom(seed) {
+            let x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+        }
+
+        function getDailySeed() {
+            const today = new Date();
+            return today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+        }
+
+        function shuffleArray(array, seed) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(seededRandom(seed + i) * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function generateDailyHand() {
+            dailySeed = getDailySeed() + customSeedOffset;
+            const shuffled = shuffleArray(cardTypes, dailySeed);
+            dailyHand = shuffled.slice(0, 8);
+        }
+
+        function renderHand() {
+            const handEl = document.getElementById('hand');
+            handEl.innerHTML = '';
+            
+            const coinsSpent = getEffectiveCost(selectedCards);
+            const canAfford = maxCoins - coinsSpent;
+
+            dailyHand.forEach((card, index) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card';
+                
+                const isSelected = selectedCards.includes(card);
+                const canPlay = isSelected || card.cost <= canAfford;
+                
+                if (isSelected) {
+                    cardEl.classList.add('selected');
+                }
+                if (!canPlay && !isSelected) {
+                    cardEl.classList.add('disabled');
+                }
+
+                const typeBadges = card.types.map(type => 
+                    `<span class="card-type-badge type-${type}">${typeIcons[type]} ${type}</span>`
+                ).join('');
+
+                cardEl.innerHTML = `
+                    <div class="card-cost">${card.cost}</div>
+                    <div class="card-name">${card.name}</div>
+                    <div class="card-types">${typeBadges}</div>
+                    <div class="card-effect">${card.effect}</div>
+                    <div class="card-stars">⭐ ${card.baseStars}</div>
+                `;
+
+                if (canPlay || isSelected) {
+                    cardEl.onclick = () => toggleCard(card);
+                }
+
+                handEl.appendChild(cardEl);
+            });
+
+            renderPlayedCards();
+            updateStats();
+        }
+
+        function renderPlayedCards() {
+            const playedEl = document.getElementById('playedCards');
+            
+            if (selectedCards.length === 0) {
+                playedEl.innerHTML = '<div class="played-cards-label">Select cards in order to build your combo</div>';
+            } else {
+                let html = '<div class="played-cards-label">Your Combo (Left → Right)</div>';
+                html += '<div class="played-cards-container">';
+                selectedCards.forEach((card, idx) => {
+                    const typeBadges = card.types.map(type => typeIcons[type]).join('');
+                    html += `
+                        <div class="played-card-slot" onclick="removeCard(${idx})">
+                            <div class="slot-number">${idx + 1}</div>
+                            <div class="card-name">${card.name}</div>
+                            <div style="font-size: 0.75em; color: #999;">${typeBadges}</div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                playedEl.innerHTML = html;
+            }
+        }
+
+        function removeCard(index) {
+            selectedCards.splice(index, 1);
+            renderHand();
+        }
+
+        function toggleCard(card) {
+            const index = selectedCards.indexOf(card);
+            if (index > -1) {
+                selectedCards.splice(index, 1);
+            } else {
+                const coinsSpent = selectedCards.reduce((sum, c) => sum + c.cost, 0);
+                if (coinsSpent + card.cost <= maxCoins) {
+                    selectedCards.push(card);
+                }
+            }
+            renderHand();
+        }
+
+        function updateStats() {
+            const coinsSpent = getEffectiveCost(selectedCards);
+            const coinsLeft = maxCoins - coinsSpent;
+            
+            const coinsDisplay = document.getElementById('coinsDisplay');
+            coinsDisplay.innerHTML = '';
+            for (let i = 0; i < maxCoins; i++) {
+                const coin = document.createElement('div');
+                coin.className = i < coinsSpent ? 'coin spent' : 'coin';
+                coin.textContent = '¢';
+                coinsDisplay.appendChild(coin);
+            }
+        }
+
+        function calculateStars(cards, showBreakdown = true) {
+            if (cards.length === 0) return showBreakdown ? { total: 0, breakdown: [] } : 0;
+
+            let breakdown = [];
+            let totalStars = 0;
+            const totalCost = getEffectiveCost(cards);
+            const coinsLeft = maxCoins - totalCost;
+
+            // Count types
+            const typeCount = {};
+            const allTypes = new Set();
+            cards.forEach(card => {
+                card.types.forEach(type => {
+                    typeCount[type] = (typeCount[type] || 0) + 1;
+                    allTypes.add(type);
+                });
+            });
+
+            // Helper function to count vowels
+            function countVowels(str) {
+                return (str.match(/[aeiouAEIOU]/g) || []).length;
+            }
+
+            cards.forEach((card, idx) => {
+                let cardStars = card.baseStars;
+                let bonusText = '';
+                const prevCard = idx > 0 ? cards[idx - 1] : null;
+                const nextCard = idx < cards.length - 1 ? cards[idx + 1] : null;
+
+                // Apply card effects based on name
+                if (card.name === "Fireball") {
+                    const bonus = (typeCount.boom || 0) * 3;
+                    cardStars += bonus;
+                    bonusText = ` (+${bonus} for ${typeCount.boom || 0} BOOM cards)`;
+                } else if (card.name === "Blitz") {
+                    const penalty = (cards.length - 1) * 1;
+                    cardStars -= penalty;
+                    bonusText = ` (-${penalty} for ${cards.length - 1} other cards)`;
+                } else if (card.name === "Supernova") {
+                    const uniqueTypes = allTypes.size;
+                    const bonus = uniqueTypes * 2;
+                    cardStars += bonus;
+                    bonusText = ` (+${bonus} for ${uniqueTypes} unique types)`;
+                } else if (card.name === "Quick Strike") {
+                    if (idx === 0) {
+                        cardStars += 4;
+                        bonusText = ' (+4 for playing first)';
+                    }
+                } else if (card.name === "Arcane Ritual") {
+                    const bonus = (typeCount.wow || 0) * 2;
+                    cardStars += bonus;
+                    bonusText = ` (+${bonus} for ${typeCount.wow || 0} WOW cards)`;
+                } else if (card.name === "Ember") {
+                    const hasBoomAdjacent = (prevCard?.types.includes("boom")) || (nextCard?.types.includes("boom"));
+                    if (hasBoomAdjacent) {
+                        cardStars += 5;
+                        bonusText = ' (+5 for adjacent BOOM)';
+                    }
+                } else if (card.name === "Spark") {
+                    // Spark halves the next card's stars
+                    bonusText = ' (halves next card)';
+                } else if (card.name === "Amplify") {
+                    if (prevCard) {
+                        cardStars += prevCard.baseStars;
+                        bonusText = ` (+${prevCard.baseStars} from previous card)`;
+                    }
+                } else if (card.name === "Chain Reaction") {
+                    cardStars += cards.length;
+                    bonusText = ` (+${cards.length} for ${cards.length} cards)`;
+                } else if (card.name === "Echo") {
+                    if (prevCard) {
+                        const prevTotal = parseInt(breakdown[breakdown.length - 1].match(/: (\d+)★/)[1]);
+                        cardStars += prevTotal;
+                        bonusText = ` (+${prevTotal} copied from previous)`;
+                    }
+                } else if (card.name === "Meteor") {
+                    const penalty = (cards.length - 1) * 2;
+                    cardStars -= penalty;
+                    bonusText = ` (-${penalty} for ${cards.length - 1} other cards)`;
+                } else if (card.name === "Rush") {
+                    const coinsSpent = maxCoins - coinsLeft;
+                    if (coinsSpent > 0) {
+                        cardStars -= 2;
+                        bonusText = ' (-2 for spending coins)';
+                    }
+                } else if (card.name === "Prismatic Burst") {
+                    if (typeCount.zap >= 1 && typeCount.wow >= 1) {
+                        cardStars += 3;
+                        bonusText = ' (+3 for ZAP+WOW combo)';
+                    }
+                } else if (card.name === "Inferno") {
+                    const hasBoomAdjacent = (prevCard?.types.includes("boom")) || (nextCard?.types.includes("boom"));
+                    if (hasBoomAdjacent) {
+                        cardStars = cardStars * 2;
+                        bonusText = ' (x2 for adjacent BOOM)';
+                    }
+                } else if (card.name === "Flurry") {
+                    const cardsAfter = cards.length - idx - 1;
+                    cardStars += cardsAfter;
+                    bonusText = ` (+${cardsAfter} for cards after)`;
+                } else if (card.name === "Cosmic Bind") {
+                    if (idx === cards.length - 1) {
+                        cardStars += 5;
+                        bonusText = ' (+5 for playing last)';
+                    }
+                } else if (card.name === "Barrage") {
+                    if (cards.length === 3) {
+                        cardStars += 2;
+                        bonusText = ' (+2 for exactly 3 cards)';
+                    }
+                } else if (card.name === "Lightning Rod") {
+                    const hasZapAdjacent = (prevCard?.types.includes("zap")) || (nextCard?.types.includes("zap"));
+                    if (hasZapAdjacent) {
+                        cardStars += 3;
+                        bonusText = ' (+3 for adjacent ZAP)';
+                    }
+                } else if (card.name === "Miracle") {
+                    const uniqueTypes = allTypes.size;
+                    const bonus = uniqueTypes * 2;
+                    cardStars += bonus;
+                    bonusText = ` (+${bonus} for ${uniqueTypes} types)`;
+                } else if (card.name === "Detonation") {
+                    if ((typeCount.zap || 0) === 0) {
+                        cardStars += 4;
+                        bonusText = ' (+4 for no ZAP cards)';
+                    }
+                } else if (card.name === "Synergy") {
+                    const uniqueTypes = allTypes.size;
+                    cardStars += uniqueTypes;
+                    bonusText = ` (+${uniqueTypes} for ${uniqueTypes} unique types)`;
+                } else if (card.name === "Discount") {
+                    // Show what discount did
+                    if (nextCard) {
+                        const savedCost = Math.min(1, nextCard.cost);
+                        bonusText = ` (next card -${savedCost} cost)`;
+                    } else {
+                        bonusText = ' (no next card)';
+                    }
+                } else if (card.name === "Vowel Counter") {
+                    if (prevCard) {
+                        const vowels = countVowels(prevCard.name);
+                        cardStars += vowels;
+                        bonusText = ` (+${vowels} for "${prevCard.name}")`;
+                    }
+                } else if (card.name === "Alphabet Ace") {
+                    if (prevCard) {
+                        const firstLetter = prevCard.name[0].toUpperCase();
+                        if (firstLetter >= 'A' && firstLetter <= 'M') {
+                            cardStars += 2;
+                            bonusText = ` (+2 for "${prevCard.name}" starting A-M)`;
+                        }
+                    }
+                } else if (card.name === "Letter Luck") {
+                    const letters = card.name.replace(/\s/g, '').length;
+                    cardStars += letters;
+                    bonusText = ` (+${letters} for name length)`;
+                } else if (card.name === "Palindrome") {
+                    if (cards.length % 2 === 1) {
+                        cardStars += 6;
+                        bonusText = ' (+6 for odd card count)';
+                    }
+                } else if (card.name === "Name Game") {
+                    const longNameCards = cards.filter(c => c.name.replace(/\s/g, '').length > 8).length;
+                    cardStars += longNameCards;
+                    bonusText = ` (+${longNameCards} for long names)`;
+                }
+
+                // Apply Spark debuff AFTER all other effects (halves total stars)
+                if (prevCard && prevCard.name === "Spark") {
+                    cardStars = Math.floor(cardStars / 2);
+                    bonusText += ' [halved by Spark]';
+                }
+
+                breakdown.push(`${card.name}: ${cardStars}★${bonusText}`);
+                totalStars += cardStars;
+            });
+
+            if (showBreakdown) {
+                return { total: totalStars, breakdown };
+            }
+            return totalStars;
+        }
+
+        let bestComboScore = 0;
+        let optimalScore = null;
+        let optimalCombo = null;
+        let hasValidated = false;
+
+        // Helper to calculate effective cost considering Discount cards
+        function getEffectiveCost(cards) {
+            let total = 0;
+            cards.forEach((card, idx) => {
+                let cost = card.cost;
+                // If previous card was Discount, reduce this card's cost by 1
+                if (idx > 0 && cards[idx - 1].name === "Discount") {
+                    cost = Math.max(0, cost - 1);
+                }
+                total += cost;
+            });
+            return total;
+        }
+
+        function findOptimalCombo() {
+            // Brute force all possible combinations within coin limit
+            let bestScore = 0;
+            let bestCombo = [];
+            const n = dailyHand.length;
+            
+            // Try all permutations and combinations
+            function tryCombo(hand, combo, remaining) {
+                if (remaining < 0) return;
+                
+                const score = calculateStars(combo, false);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestCombo = [...combo];
+                }
+                
+                for (let i = 0; i < hand.length; i++) {
+                    const card = hand[i];
+                    if (card.cost <= remaining) {
+                        const newHand = hand.slice(0, i).concat(hand.slice(i + 1));
+                        tryCombo(newHand, [...combo, card], remaining - card.cost);
+                    }
+                }
+            }
+            
+            tryCombo(dailyHand, [], maxCoins);
+            return { score: bestScore, combo: bestCombo };
+        }
+
+        function validateCombo() {
+            if (selectedCards.length === 0) {
+                showResult('Play at least one card!', false);
+                return;
+            }
+
+            // Calculate optimal on first validation
+            if (optimalScore === null) {
+                const optimal = findOptimalCombo();
+                optimalScore = optimal.score;
+                optimalCombo = optimal.combo;
+            }
+
+            const result = calculateStars(selectedCards, true);
+            const totalStars = result.total;
+            
+            // Update best score
+            if (totalStars > bestComboScore) {
+                bestComboScore = totalStars;
+                document.getElementById('bestScore').textContent = bestComboScore;
+            }
+            
+            let breakdownHTML = '<div class="combo-breakdown">';
+            breakdownHTML += `<div style="font-weight: 600; margin-bottom: 8px; color: #fff;">Combo Breakdown:</div>`;
+            result.breakdown.forEach(line => {
+                breakdownHTML += `<div class="combo-line">• ${line}</div>`;
+            });
+            breakdownHTML += `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #334155; font-weight: 600; color: #fbbf24;">Total: ${totalStars} ⭐</div>`;
+            
+            // Check if optimal
+            if (totalStars === optimalScore) {
+                breakdownHTML += `<div style="margin-top: 8px; padding: 8px; background: #064e3b; border: 1px solid #10b981; border-radius: 4px; color: #86efac; font-weight: 500;">🎉 PERFECT! This is the optimal combo!</div>`;
+            } else if (totalStars < optimalScore) {
+                const diff = optimalScore - totalStars;
+                breakdownHTML += `<div style="margin-top: 8px; padding: 8px; background: #713f12; border: 1px solid #fbbf24; border-radius: 4px; color: #fde68a; font-weight: 500;">💡 There's a better combo worth ${optimalScore} stars (+${diff} more)!</div>`;
+            }
+            
+            breakdownHTML += '</div>';
+
+            const coinsSpent = getEffectiveCost(selectedCards);
+            const message = `You scored ${totalStars} stars using ${coinsSpent} coin${coinsSpent !== 1 ? 's' : ''}!`;
+            
+            showResult(message + breakdownHTML, true);
+            hasValidated = true;
+        }
+
+        function toggleCard(card) {
+            const index = selectedCards.indexOf(card);
+            if (index > -1) {
+                selectedCards.splice(index, 1);
+            } else {
+                // Calculate what the cost would be if we add this card
+                const testCards = [...selectedCards, card];
+                const effectiveCost = getEffectiveCost(testCards);
+                
+                if (effectiveCost <= maxCoins) {
+                    selectedCards.push(card);
+                }
+            }
+            renderHand();
+        }
+
+        function showResult(message, success) {
+            const resultEl = document.getElementById('result');
+            resultEl.className = `result ${success ? 'success' : 'failure'}`;
+            resultEl.innerHTML = message;
+        }
+
+        function reset() {
+            selectedCards = [];
+            renderHand();
+            const resultEl = document.getElementById('result');
+            if (resultEl.innerHTML) {
+                resultEl.innerHTML = '';
+            }
+        }
+
+        function revealSolution() {
+            // Calculate optimal if not already done
+            if (optimalScore === null) {
+                const optimal = findOptimalCombo();
+                optimalScore = optimal.score;
+                optimalCombo = optimal.combo;
+            }
+
+            // Set the optimal combo as selected
+            selectedCards = [...optimalCombo];
+            renderHand();
+
+            // Show the solution breakdown
+            const result = calculateStars(selectedCards, true);
+            const totalStars = result.total;
+            
+            // Update best score
+            if (totalStars > bestComboScore) {
+                bestComboScore = totalStars;
+                document.getElementById('bestScore').textContent = bestComboScore;
+            }
+            
+            let breakdownHTML = '<div class="combo-breakdown">';
+            breakdownHTML += `<div style="font-weight: 600; margin-bottom: 8px; color: #fff;">💡 Optimal Solution:</div>`;
+            result.breakdown.forEach(line => {
+                breakdownHTML += `<div class="combo-line">• ${line}</div>`;
+            });
+            breakdownHTML += `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #334155; font-weight: 600; color: #fbbf24;">Total: ${totalStars} ⭐</div>`;
+            breakdownHTML += `<div style="margin-top: 8px; padding: 8px; background: #064e3b; border: 1px solid #10b981; border-radius: 4px; color: #86efac; font-weight: 500;">🏆 This is the best possible combo!</div>`;
+            breakdownHTML += '</div>';
+
+            const coinsSpent = getEffectiveCost(selectedCards);
+            const message = `Optimal combo revealed: ${totalStars} stars using ${coinsSpent} coin${coinsSpent !== 1 ? 's' : ''}!`;
+            
+            showResult(message + breakdownHTML, true);
+        }
+
+        function newPuzzle() {
+            // Increment offset to get a new shuffle
+            customSeedOffset += 1;
+            
+            // Reset game state
+            selectedCards = [];
+            optimalScore = null;
+            optimalCombo = null;
+            bestComboScore = 0;
+            hasValidated = false;
+            
+            // Update best score display
+            document.getElementById('bestScore').textContent = '—';
+            
+            // Generate new hand
+            generateDailyHand();
+            renderHand();
+            
+            // Clear result
+            document.getElementById('result').innerHTML = '';
+        }
+
+        // Event listeners
+        document.getElementById('validateBtn').onclick = validateCombo;
+        document.getElementById('resetBtn').onclick = reset;
+        document.getElementById('revealBtn').onclick = revealSolution;
+        document.getElementById('newPuzzleBtn').onclick = newPuzzle;
+
+        // Initialize
+        generateDailyHand();
+        renderHand();
+    </script>
+</body>
+</html>

@@ -71,60 +71,6 @@
     opacity: 0.9;
   }
 
-  /* Countdown timer */
-  .countdown-box {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 18px 26px;
-    margin-bottom: 32px;
-    text-align: center;
-  }
-
-  .countdown-label {
-    color: var(--text-dim);
-    font-size: 10px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-  }
-
-  .countdown-timer {
-    font-family: var(--display);
-    font-size: 36px;
-    color: var(--text);
-    letter-spacing: 4px;
-  }
-
-  /* Info box */
-  .info-box {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 18px 26px;
-    margin-bottom: 48px;
-    line-height: 1.85;
-  }
-
-  .info-box p {
-    font-size: 12px;
-    color: #bbb;
-    margin-bottom: 12px;
-  }
-
-  .info-box p:last-child {
-    margin-bottom: 0;
-  }
-
-  .info-label {
-    color: var(--text-dim);
-    font-size: 10px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    display: block;
-  }
-
   /* Games grid */
   .games-grid {
     display: grid;
@@ -266,44 +212,42 @@
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .footer-countdown {
+    display: flex;
+    align-items: baseline;
     gap: 12px;
   }
 
-  .footer-stats {
-    display: flex;
-    gap: 20px;
-  }
-
-  .stat {
-    text-align: center;
-  }
-
-  .stat-label {
-    font-size: 8px;
-    color: #444;
+  .countdown-label {
+    font-size: 10px;
+    color: var(--text-dim);
     letter-spacing: 2px;
     text-transform: uppercase;
-    display: block;
   }
 
-  .stat-val {
+  .countdown-timer {
     font-family: var(--display);
-    font-size: 19px;
+    font-size: 24px;
     color: var(--text);
     letter-spacing: 2px;
   }
 
   .footer-link {
-    font-size: 10px;
+    font-size: 11px;
     color: var(--text-dim);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    opacity: 0.7;
-    transition: opacity 0.2s;
+    text-decoration: none;
+    transition: color 0.2s;
   }
 
   .footer-link:hover {
-    opacity: 1;
+    color: var(--text);
+  }
+
+  .kofi-link {
+    letter-spacing: 1px;
   }
 
   /* Responsive */
@@ -336,17 +280,6 @@
     <h1 class="logo">GALAXY BRAIN</h1>
     <p class="tagline">Weekly Puzzles and Trivia</p>
   </header>
-
-  <div class="countdown-box">
-    <div class="countdown-label">Next Week in</div>
-    <div class="countdown-timer" id="countdown">--:--:--</div>
-  </div>
-
-  <div class="info-box">
-    <span class="info-label">About</span>
-    <p>Nine logic puzzles and trivia games. A fresh set drops every Sunday at midnight. Complete all nine for the weekly perfect score.</p>
-    <p>All games are free, ad-free, and require only thinking — no accounts, no tracking, just puzzles.</p>
-  </div>
 
   <div class="games-grid">
     
@@ -418,23 +351,13 @@
 
 <footer>
   <div class="footer-content">
-    <div class="footer-stats">
-      <div class="stat">
-        <span class="stat-label">Week</span>
-        <span class="stat-val" id="weekNumber">--</span>
-      </div>
-      <div class="stat">
-        <span class="stat-label">Completed</span>
-        <span class="stat-val" id="completedCount">0</span>
-      </div>
-      <div class="stat">
-        <span class="stat-label">Streak</span>
-        <span class="stat-val" id="streakCount">0</span>
-      </div>
+    <div class="footer-countdown">
+      <span class="countdown-label">Next Week</span>
+      <span class="countdown-timer" id="countdown">--:--:--</span>
     </div>
-    <div class="footer-link">
-      DOM2D © 2026
-    </div>
+    <a href="https://ko-fi.com/dom2d" target="_blank" class="footer-link kofi-link">
+      Support on Ko-fi ☕
+    </a>
   </div>
 </footer>
 
@@ -504,14 +427,12 @@ const GAMES = [
 
 function updateCompletionStatus() {
   const weekNum = getWeekNumber();
-  let completedCount = 0;
 
   GAMES.forEach(game => {
     const isCompleted = localStorage.getItem(`${game}_w${weekNum}`) === '1';
     const checkmark = document.getElementById(`check-${game}`);
     
     if (isCompleted) {
-      completedCount++;
       if (checkmark) {
         checkmark.classList.add('completed');
         checkmark.textContent = '✓';
@@ -523,14 +444,6 @@ function updateCompletionStatus() {
       }
     }
   });
-
-  // Update footer stats
-  document.getElementById('weekNumber').textContent = weekNum;
-  document.getElementById('completedCount').textContent = `${completedCount}/9`;
-  
-  // Calculate streak (simplified: 1 if all games completed this week, else 0)
-  const streak = completedCount === 9 ? 1 : 0;
-  document.getElementById('streakCount').textContent = streak;
 }
 
 // ═══════════════════════════════════════════════════════════════════════

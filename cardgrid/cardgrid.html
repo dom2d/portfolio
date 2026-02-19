@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Grid – DOM2D</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+        }
+        
+        :root {
+            --bg: #0a0a0a;
+            --bg2: rgba(255,255,255,0.04);
+            --text: #e8e8e8;
+            --text-dim: #888;
+            --border: rgba(255,255,255,0.1);
+            --border-hover: rgba(255,255,255,0.25);
+            --red: #cc4444;
+            --mono: 'DM Mono', monospace;
+            --display: 'Bebas Neue', cursive;
+            --accent: #2d6e4a;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--mono);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 10px;
+        }
+
+        h1 {
+            font-family: var(--display);
+            font-size: clamp(52px, 12vw, 84px);
+            color: var(--accent);
+            letter-spacing: 6px;
+            margin: 8px 0;
+            text-shadow: 0 0 40px rgba(45, 110, 74, 0.4);
+        }
+
+        .subtitle {
+            font-size: 11px;
+            color: var(--text-dim);
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 12px;
+            margin: 20px auto;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .card {
+            aspect-ratio: 2/3;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 11px 11px 0 0;
+            border-bottom: none;
+            cursor: grab;
+            position: relative;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: visible;
+            margin-bottom: 40px;
+        }
+
+        .card:active {
+            cursor: grabbing;
+        }
+
+        .card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 0 20px rgba(255,255,255,0.1);
+        }
+
+        .card.selected {
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 20px rgba(45, 110, 74, 0.3);
+            transform: scale(1.03);
+        }
+
+        .card.dragging {
+            opacity: 0.5;
+        }
+
+        .card.drag-over {
+            border: 2px dashed var(--accent);
+        }
+
+        .card.correct {
+            animation: rainbow-border 2s linear infinite;
+        }
+
+        @keyframes rainbow-border {
+            0% { border-color: #ff0000; box-shadow: 0 0 20px rgba(255,0,0,0.5); }
+            16% { border-color: #ff8800; box-shadow: 0 0 20px rgba(255,136,0,0.5); }
+            33% { border-color: #ffff00; box-shadow: 0 0 20px rgba(255,255,0,0.5); }
+            50% { border-color: #00ff00; box-shadow: 0 0 20px rgba(0,255,0,0.5); }
+            66% { border-color: #0088ff; box-shadow: 0 0 20px rgba(0,136,255,0.5); }
+            83% { border-color: #8800ff; box-shadow: 0 0 20px rgba(136,0,255,0.5); }
+            100% { border-color: #ff0000; box-shadow: 0 0 20px rgba(255,0,0,0.5); }
+        }
+
+        .card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 11px 11px 0 0;
+            pointer-events: none;
+        }
+
+        .speech-bubble {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            transform: translateY(100%);
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-top: none;
+            padding: 8px 6px;
+            border-radius: 0 0 8px 8px;
+            font-size: clamp(0.6rem, 1.4vw, 0.75rem);
+            font-weight: 500;
+            color: var(--text);
+            text-align: center;
+            z-index: 10;
+            line-height: 1.2;
+            letter-spacing: 0.3px;
+        }
+
+        .card-number {
+            font-family: var(--display);
+            font-size: clamp(3.5rem, 10vw, 6rem);
+            line-height: 0.9;
+        }
+
+        .suit {
+            font-size: clamp(2rem, 5vw, 3rem);
+        }
+
+        .clue {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            right: 8px;
+            font-size: clamp(0.65rem, 1.5vw, 0.8rem);
+            text-align: center;
+            color: var(--text-dim);
+            line-height: 1.2;
+        }
+
+        .red { color: var(--red); }
+        .black { color: var(--text); }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 16px 0;
+        }
+
+        button {
+            background: var(--text);
+            color: var(--bg);
+            border: none;
+            border-radius: 8px;
+            padding: 11px 32px;
+            font-family: var(--display);
+            font-size: 20px;
+            letter-spacing: 3px;
+            cursor: pointer;
+            box-shadow: 0 0 28px rgba(255,255,255,0.2);
+            transition: transform 0.1s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .message {
+            text-align: center;
+            font-size: clamp(1rem, 2.8vw, 1.2rem);
+            margin: 12px 0 8px 0;
+            min-height: 30px;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .victory {
+            color: var(--text);
+            animation: dance 0.5s infinite;
+            font-size: clamp(1.3rem, 3.5vw, 1.7rem);
+            text-shadow: 0 0 30px rgba(255,255,255,0.5);
+        }
+
+        @keyframes dance {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-10px) rotate(-5deg); }
+            50% { transform: translateY(0) rotate(0deg); }
+            75% { transform: translateY(-10px) rotate(5deg); }
+        }
+
+        .moves-counter {
+            font-size: clamp(0.75rem, 1.8vw, 0.85rem);
+            text-align: center;
+            margin: 8px 0;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            position: absolute;
+            animation: confetti-fall 3s linear forwards;
+        }
+
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 640px) {
+            h1 {
+                font-size: clamp(40px, 10vw, 60px);
+                letter-spacing: 4px;
+            }
+            
+            .grid {
+                gap: 8px;
+            }
+            
+            button {
+                padding: 10px 24px;
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+</head>
+<body>
+    <h1 id="title">CARD GRID</h1>
+    <div class="subtitle">Arrange the cards to satisfy all clues</div>
+    
+    <div class="game-container">
+        <div class="grid" id="grid"></div>
+        <div class="message" id="message"></div>
+        <div class="controls">
+            <button onclick="newGame()">New Puzzle</button>
+            <button onclick="checkSolution()">Check Solution</button>
+            <button onclick="revealSolution()">Reveal Solution</button>
+            <button onclick="exportLevel()">Export Level</button>
+        </div>
+        <div class="moves-counter">Guesses: <span id="moveCount">0</span></div>
+    </div>
+
+    <script>
+        const suits = {
+            spade: '♠',
+            club: '♣',
+            heart: '♥',
+            diamond: '♦'
+        };
+
+        let currentPuzzle = null;
+        let selectedCard = null;
+        let moves = 0;
+        let draggedIndex = null;
+
+        // COMPREHENSIVE validation - checks EVERY clue thoroughly
+        function validatePuzzle(puzzle) {
+            const grid = puzzle.solution;
+            const errors = [];
+            
+            console.log('🔍 VALIDATING PUZZLE...');
+            
+            grid.forEach((card, index) => {
+                const row = Math.floor(index / 3);
+                const col = index % 3;
+                const isRed = card.suit === 'heart' || card.suit === 'diamond';
+                
+                console.log(`\n📍 Position [${row},${col}]: ${card.num}${card.suit}`);
+                console.log(`   Clue: "${card.clue}"`);
+                
+                // Get neighbors
+                const left = col > 0 ? grid[index - 1] : null;
+                const right = col < 2 ? grid[index + 1] : null;
+                const above = row > 0 ? grid[index - 3] : null;
+                const below = row < 2 ? grid[index + 3] : null;
+                
+                console.log(`   Neighbors: left=${left ? left.num+left.suit : 'none'}, right=${right ? right.num+right.suit : 'none'}, above=${above ? above.num+above.suit : 'none'}, below=${below ? below.num+below.suit : 'none'}`);
+                
+                // Get all neighbors
+                const neighbors = [left, right, above, below].filter(n => n !== null);
+                
+                // Get row and column cards
+                const rowCards = [grid[row * 3], grid[row * 3 + 1], grid[row * 3 + 2]];
+                const colCards = [grid[col], grid[col + 3], grid[col + 6]];
+                
+                console.log(`   Row cards: ${rowCards.map(c => c.num+c.suit).join(', ')}`);
+                console.log(`   Col cards: ${colCards.map(c => c.num+c.suit).join(', ')}`);
+                
+                // Calculate sums
+                const rowSum = rowCards.reduce((sum, c) => sum + c.num, 0);
+                const colSum = colCards.reduce((sum, c) => sum + c.num, 0);
+                const neighborSum = neighbors.reduce((sum, n) => sum + n.num, 0);
+                
+                console.log(`   Row sum: ${rowSum}, Col sum: ${colSum}, Neighbor sum: ${neighborSum}`);
+                
+                // Verify clue
+                const clue = card.clue.toLowerCase();
+                let verified = false;
+                
+                // Check "my row sums to X"
+                const rowSumMatch = clue.match(/my row sums to (\d+)/);
+                if (rowSumMatch) {
+                    const claimedSum = parseInt(rowSumMatch[1]);
+                    if (rowSum !== claimedSum) {
+                        errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims row sums to ${claimedSum}, actually ${rowSum}`);
+                    } else {
+                        console.log(`   ✅ Row sum verified: ${claimedSum}`);
+                        verified = true;
+                    }
+                }
+                
+                // Check "my column sums to X"
+                const colSumMatch = clue.match(/my column sums to (\d+)/);
+                if (colSumMatch) {
+                    const claimedSum = parseInt(colSumMatch[1]);
+                    if (colSum !== claimedSum) {
+                        errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims column sums to ${claimedSum}, actually ${colSum}`);
+                    } else {
+                        console.log(`   ✅ Column sum verified: ${claimedSum}`);
+                        verified = true;
+                    }
+                }
+                
+                // Check "my neighbors sum to X"
+                const neighborSumMatch = clue.match(/my neighbors sum to (\d+)/);
+                if (neighborSumMatch) {
+                    const claimedSum = parseInt(neighborSumMatch[1]);
+                    if (neighborSum !== claimedSum) {
+                        errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims neighbors sum to ${claimedSum}, actually ${neighborSum}`);
+                    } else {
+                        console.log(`   ✅ Neighbor sum verified: ${claimedSum}`);
+                        verified = true;
+                    }
+                }
+                
+                // Check "card to my left is X"
+                const leftIsMatch = clue.match(/card to my left is(?: (?:a )?(\d+)|(?:either )?(\d+) or (\d+)|multiple of (\d+))/);
+                if (leftIsMatch) {
+                    if (leftIsMatch[4]) { // multiple of X
+                        const mult = parseInt(leftIsMatch[4]);
+                        if (!left || left.num % mult !== 0) {
+                            errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims left is multiple of ${mult}, actually ${left ? left.num : 'none'}`);
+                        } else {
+                            console.log(`   ✅ Left is multiple of ${mult} verified: ${left.num}`);
+                            verified = true;
+                        }
+                    } else if (leftIsMatch[2] && leftIsMatch[3]) { // either X or Y
+                        const num1 = parseInt(leftIsMatch[2]);
+                        const num2 = parseInt(leftIsMatch[3]);
+                        if (!left || (left.num !== num1 && left.num !== num2)) {
+                            errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims left is ${num1} or ${num2}, actually ${left ? left.num : 'none'}`);
+                        } else {
+                            console.log(`   ✅ Left is ${num1} or ${num2} verified: ${left.num}`);
+                            verified = true;
+                        }
+                    } else if (leftIsMatch[1]) { // specific number
+                        const num = parseInt(leftIsMatch[1]);
+                        if (!left || left.num !== num) {
+                            errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims left is ${num}, actually ${left ? left.num : 'none'}`);
+                        } else {
+                            console.log(`   ✅ Left is ${num} verified`);
+                            verified = true;
+                        }
+                    }
+                }
+                
+                // Check "card to my right is X" / "card to right is X"
+                const rightIsMatch = clue.match(/card to (?:my )?right is(?: (?:a )?(\d+)|(?:either )?(\d+) or (\d+)|multiple of (\d+))/);
+                if (rightIsMatch) {
+                    if (rightIsMatch[4]) { // multiple of X
+                        const mult = parseInt(rightIsMatch[4]);
+                        if (!right || right.num % mult !== 0) {
+                            errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims right is multiple of ${mult}, actually ${right ? right.num : 'none'}`);
+                        } else {
+                            console.log(`   ✅ Right is multiple of ${mult} verified: ${right.num}`);
+                            verified = true;
+                        }
+                    } else if (rightIsMatch[2] && rightIsMatch[3]) { // either X or Y
+                        const num1 = parseInt(rightIsMatch[2]);
+                        const num2 = parseInt(rightIsMatch[3]);
+                        if (!right || (right.num !== num1 && right.num !== num2)) {
+                            errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims right is ${num1} or ${num2}, actually ${right ? right.num : 'none'}`);
+                        } else {
+                            console.log(`   ✅ Right is ${num1} or ${num2} verified: ${right.num}`);
+                            verified = true;
+                        }
+                    } else if (rightIsMatch[1]) { // specific number
+                        const num = parseInt(rightIsMatch[1]);
+                        if (!right || right.num !== num) {
+                            errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims right is ${num}, actually ${right ? right.num : 'none'}`);
+                        } else {
+                            console.log(`   ✅ Right is ${num} verified`);
+                            verified = true;
+                        }
+                    }
+                }
+                
+                // Check "card above me is X"
+                const aboveIsMatch = clue.match(/card above (?:me )?is (\d+)/);
+                if (aboveIsMatch) {
+                    const num = parseInt(aboveIsMatch[1]);
+                    if (!above || above.num !== num) {
+                        errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims above is ${num}, actually ${above ? above.num : 'none'}`);
+                    } else {
+                        console.log(`   ✅ Above is ${num} verified`);
+                        verified = true;
+                    }
+                }
+                
+                // Check "card below me is X" / "card below is X"
+                const belowIsMatch = clue.match(/card below (?:me )?is(?: (?:a )?(\d+)|(?:either )?(\d+) or (\d+)|multiple of (\d+))/);
+                if (belowIsMatch) {
+                    if (belowIsMatch[4]) { // multiple of X
+                        const mult = parseInt(belowIsMatch[4]);
+                        if (!below || below.num % mult !== 0) {
+                            errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims below is multiple of ${mult}, actually ${below ? below.num : 'none'}`);
+                        } else {
+                            console.log(`   ✅ Below is multiple of ${mult} verified: ${below.num}`);
+                            verified = true;
+                        }
+                    } else if (belowIsMatch[2] && belowIsMatch[3]) { // either X or Y
+                        const num1 = parseInt(belowIsMatch[2]);
+                        const num2 = parseInt(belowIsMatch[3]);
+                        if (!below || (below.num !== num1 && below.num !== num2)) {
+                            errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims below is ${num1} or ${num2}, actually ${below ? below.num : 'none'}`);
+                        } else {
+                            console.log(`   ✅ Below is ${num1} or ${num2} verified: ${below.num}`);
+                            verified = true;
+                        }
+                    } else if (belowIsMatch[1]) { // specific number
+                        const num = parseInt(belowIsMatch[1]);
+                        if (!below || below.num !== num) {
+                            errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims below is ${num}, actually ${below ? below.num : 'none'}`);
+                        } else {
+                            console.log(`   ✅ Below is ${num} verified`);
+                            verified = true;
+                        }
+                    }
+                }
+                
+                // Check "my row has two Xs" or "my row has X Ys"
+                const rowHasMatch = clue.match(/my row has (?:two|2) (\d+)s?/);
+                if (rowHasMatch) {
+                    const targetNum = parseInt(rowHasMatch[1]);
+                    const count = rowCards.filter(c => c.num === targetNum).length;
+                    if (count !== 2) {
+                        errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims row has two ${targetNum}s, actually has ${count}`);
+                    } else {
+                        console.log(`   ✅ Row has two ${targetNum}s verified`);
+                        verified = true;
+                    }
+                }
+                
+                // Check "my column has another X"
+                const colHasMatch = clue.match(/my column has another (\d+)/);
+                if (colHasMatch) {
+                    const targetNum = parseInt(colHasMatch[1]);
+                    const count = colCards.filter(c => c.num === targetNum).length;
+                    if (count !== 2) {
+                        errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims column has another ${targetNum}, actually has ${count} total ${targetNum}s`);
+                    } else {
+                        console.log(`   ✅ Column has another ${targetNum} verified (total: 2)`);
+                        verified = true;
+                    }
+                }
+                
+                // Check "my column is all red"
+                if (clue.includes('my column is all red')) {
+                    const allRed = colCards.every(c => c.suit === 'heart' || c.suit === 'diamond');
+                    if (!allRed) {
+                        errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims column is all red, but it's not`);
+                    } else {
+                        console.log(`   ✅ Column is all red verified`);
+                        verified = true;
+                    }
+                }
+                
+                // Check corner positions
+                if (clue.includes('corner')) {
+                    const isCorner = (row === 0 || row === 2) && (col === 0 || col === 2);
+                    if (!isCorner) {
+                        errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims to be corner but isn't`);
+                    } else {
+                        console.log(`   ✅ Corner position verified`);
+                        verified = true;
+                    }
+                }
+                
+                // Check center position
+                if (clue.includes('center')) {
+                    const isCenter = (row === 1 && col === 1);
+                    if (!isCenter) {
+                        errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims to be center but isn't`);
+                    } else {
+                        console.log(`   ✅ Center position verified`);
+                        verified = true;
+                    }
+                }
+                
+                // Check neighbor comparison clues
+                if (clue.includes('all neighbors')) {
+                    if (clue.includes('larger')) {
+                        const allLarger = neighbors.every(n => n.num > card.num);
+                        if (!allLarger) {
+                            errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims all neighbors larger, but: ${neighbors.map(n => n.num).join(',')}`);
+                        } else {
+                            console.log(`   ✅ All neighbors larger verified`);
+                            verified = true;
+                        }
+                    } else if (clue.includes('smaller')) {
+                        const allSmaller = neighbors.every(n => n.num < card.num);
+                        if (!allSmaller) {
+                            errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims all neighbors smaller, but: ${neighbors.map(n => n.num).join(',')}`);
+                        } else {
+                            console.log(`   ✅ All neighbors smaller verified`);
+                            verified = true;
+                        }
+                    }
+                }
+                
+                // Check color comparison clues
+                if (clue.includes('more red than black neighbors') || clue.includes('more black than red neighbors')) {
+                    const redNeighbors = neighbors.filter(n => n.suit === 'heart' || n.suit === 'diamond').length;
+                    const blackNeighbors = neighbors.filter(n => n.suit === 'spade' || n.suit === 'club').length;
+                    if (clue.includes('more red than black') && redNeighbors <= blackNeighbors) {
+                        errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims more red than black neighbors, but red=${redNeighbors}, black=${blackNeighbors}`);
+                    } else if (clue.includes('more black than red') && blackNeighbors <= redNeighbors) {
+                        errors.push(`❌ [${row},${col}] ${card.num}${card.suit}: Claims more black than red neighbors, but red=${redNeighbors}, black=${blackNeighbors}`);
+                    } else {
+                        console.log(`   ✅ Color comparison verified: red=${redNeighbors}, black=${blackNeighbors}`);
+                        verified = true;
+                    }
+                }
+                
+                if (!verified) {
+                    console.log(`   ⚠️  Could not verify this clue - might need manual check`);
+                }
+            });
+            
+            if (errors.length > 0) {
+                console.error('\n❌❌❌ PUZZLE VALIDATION FAILED ❌❌❌');
+                errors.forEach(err => console.error(err));
+                return false;
+            } else {
+                console.log('\n✅✅✅ ALL CLUES VERIFIED - PUZZLE IS VALID ✅✅✅');
+                return true;
+            }
+        }
+
+        const puzzles = [
+            // Puzzle 1 - 3x3 Grid (verified):
+            // Row 0: [0]=3♠  [1]=6♥  [2]=2♣
+            // Row 1: [3]=5♦  [4]=3♥  [5]=7♠
+            // Row 2: [6]=4♣  [7]=6♠  [8]=5♥
+            {
+                solution: [
+                    {num: 3, suit: 'spade', clue: 'Card to my right is 6'},
+                    {num: 6, suit: 'heart', clue: 'Card to my left is 3'},
+                    {num: 2, suit: 'club', clue: 'Card below me is 7'},
+                    {num: 5, suit: 'diamond', clue: 'Card to my right is 3'},
+                    {num: 3, suit: 'heart', clue: 'Center, card above me is 6'},
+                    {num: 7, suit: 'spade', clue: 'Card to my left is 3'},
+                    {num: 4, suit: 'club', clue: 'Card above me is 5'},
+                    {num: 6, suit: 'spade', clue: 'Card to my right is 5'},
+                    {num: 5, suit: 'heart', clue: 'Card to my left is 6'}
+                ]
+            },
+            
+            // Puzzle 2 - 3x3 Grid (verified):
+            // Row 0: [0]=2♥  [1]=7♣  [2]=4♦
+            // Row 1: [3]=8♠  [4]=2♣  [5]=6♥
+            // Row 2: [6]=4♠  [7]=9♦  [8]=3♥
+            {
+                solution: [
+                    {num: 2, suit: 'heart', clue: 'Top-left corner position'},
+                    {num: 7, suit: 'club', clue: 'Card to my left is 2'},
+                    {num: 4, suit: 'diamond', clue: 'Card below me is 6'},
+                    {num: 8, suit: 'spade', clue: 'Card to my right is 2'},
+                    {num: 2, suit: 'club', clue: 'Card above me is 7'},
+                    {num: 6, suit: 'heart', clue: 'Card to my left is 2'},
+                    {num: 4, suit: 'spade', clue: 'Card to my right is 9'},
+                    {num: 9, suit: 'diamond', clue: 'Card above me is 2'},
+                    {num: 3, suit: 'heart', clue: 'Card above me is 6'}
+                ]
+            },
+            
+            // Puzzle 3 - 3x3 Grid (verified):
+            // Row 0: [0]=5♣  [1]=3♦  [2]=8♠
+            // Row 1: [3]=6♥  [4]=9♣  [5]=2♦
+            // Row 2: [6]=4♦  [7]=5♠  [8]=7♥
+            {
+                solution: [
+                    {num: 5, suit: 'club', clue: 'Card to my right is 3'},
+                    {num: 3, suit: 'diamond', clue: 'Card to my right is 8'},
+                    {num: 8, suit: 'spade', clue: 'Card below me is 2'},
+                    {num: 6, suit: 'heart', clue: 'Card above me is 5'},
+                    {num: 9, suit: 'club', clue: 'Center, all neighbors smaller'},
+                    {num: 2, suit: 'diamond', clue: 'Card to my left is 9'},
+                    {num: 4, suit: 'diamond', clue: 'Card above me is 6'},
+                    {num: 5, suit: 'spade', clue: 'Card to my right is 7'},
+                    {num: 7, suit: 'heart', clue: 'Card above me is 2'}
+                ]
+            },
+            
+            // Puzzle 4 - 3x3 Grid (verified):
+            // Row 0: [0]=7♦  [1]=2♠  [2]=6♣
+            // Row 1: [3]=3♥  [4]=8♦  [5]=4♠
+            // Row 2: [6]=6♦  [7]=4♥  [8]=2♣
+            {
+                solution: [
+                    {num: 7, suit: 'diamond', clue: 'Card to my right is 2'},
+                    {num: 2, suit: 'spade', clue: 'Card below me is 8'},
+                    {num: 6, suit: 'club', clue: 'Card to my left is 2'},
+                    {num: 3, suit: 'heart', clue: 'Card to my right is 8'},
+                    {num: 8, suit: 'diamond', clue: 'Center, card to my left is 3'},
+                    {num: 4, suit: 'spade', clue: 'Card above me is 6'},
+                    {num: 6, suit: 'diamond', clue: 'Card to my right is 4'},
+                    {num: 4, suit: 'heart', clue: 'Card above me is 8'},
+                    {num: 2, suit: 'club', clue: 'Card to my left is 4'}
+                ]
+            },
+            
+            // Puzzle 5 - 3x3 Grid (verified):
+            // Row 0: [0]=4♥  [1]=9♠  [2]=3♦
+            // Row 1: [3]=6♣  [4]=3♠  [5]=8♥
+            // Row 2: [6]=2♦  [7]=7♣  [8]=5♠
+            {
+                solution: [
+                    {num: 4, suit: 'heart', clue: 'Card to my right is 9'},
+                    {num: 9, suit: 'spade', clue: 'Card below me is 3'},
+                    {num: 3, suit: 'diamond', clue: 'Card to my left is 9'},
+                    {num: 6, suit: 'club', clue: 'Card to my right is 3'},
+                    {num: 3, suit: 'spade', clue: 'Center, card above me is 9'},
+                    {num: 8, suit: 'heart', clue: 'Card to my left is 3'},
+                    {num: 2, suit: 'diamond', clue: 'Card to my right is 7'},
+                    {num: 7, suit: 'club', clue: 'Card above me is 3'},
+                    {num: 5, suit: 'spade', clue: 'Bottom-right corner position'}
+                ]
+            }
+        ];
+
+        function createConfetti() {
+            const colors = ['#ffffff', '#e8e8e8', '#c0c0c0', '#888888', '#2d6e4a']; // Greyscale + accent
+            const confettiCount = 100;
+            const gameContainer = document.querySelector('.game-container');
+            const rect = gameContainer.getBoundingClientRect();
+            
+            for (let i = 0; i < confettiCount; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.position = 'fixed';
+                    confetti.style.left = (rect.left + Math.random() * rect.width) + 'px';
+                    confetti.style.top = rect.top + 'px';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.width = (Math.random() * 10 + 5) + 'px';
+                    confetti.style.height = (Math.random() * 10 + 5) + 'px';
+                    confetti.style.opacity = Math.random() * 0.5 + 0.5;
+                    confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                    confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    confetti.style.zIndex = '10000';
+                    
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => confetti.remove(), 4000);
+                }, i * 15);
+            }
+        }
+
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function isSolved(cards, solution) {
+            return cards.every((card, i) => 
+                card.num === solution[i].num && card.suit === solution[i].suit
+            );
+        }
+
+        function newGame() {
+            currentPuzzle = puzzles[Math.floor(Math.random() * puzzles.length)];
+            
+            console.log('\n🔄 STARTING NEW GAME - DOUBLE VERIFICATION');
+            
+            // FIRST VALIDATION
+            console.log('\n1️⃣ FIRST VALIDATION PASS:');
+            if (!validatePuzzle(currentPuzzle)) {
+                document.getElementById('message').innerHTML = 
+                    `<span style="color: #ff6b6b">⚠️ Puzzle failed validation! Check console.</span>`;
+                return; // Don't load broken puzzle
+            }
+            
+            // SECOND VALIDATION (double check!)
+            console.log('\n2️⃣ SECOND VALIDATION PASS (double-checking):');
+            if (!validatePuzzle(currentPuzzle)) {
+                document.getElementById('message').innerHTML = 
+                    `<span style="color: #ff6b6b">⚠️ Puzzle failed second validation! Check console.</span>`;
+                return; // Don't load broken puzzle
+            }
+            
+            console.log('\n✅✅ BOTH VALIDATIONS PASSED - LOADING PUZZLE ✅✅\n');
+            
+            let shuffled = shuffleArray(currentPuzzle.solution);
+            
+            // Make sure it's not already solved
+            while (isSolved(shuffled, currentPuzzle.solution)) {
+                shuffled = shuffleArray(currentPuzzle.solution);
+            }
+            
+            currentPuzzle.current = shuffled;
+            moves = 0;
+            selectedCard = null;
+            document.getElementById('moveCount').textContent = moves;
+            document.getElementById('message').textContent = '';
+            renderGrid();
+        }
+
+        function formatClue(clueText) {
+            // Replace color/suit keywords with styled spans
+            let formatted = clueText;
+            
+            // Red suits and color
+            formatted = formatted.replace(/\bheart\b/gi, '<span class="clue-red">heart</span>');
+            formatted = formatted.replace(/\bhearts\b/gi, '<span class="clue-red">hearts</span>');
+            formatted = formatted.replace(/\bdiamond\b/gi, '<span class="clue-red">diamond</span>');
+            formatted = formatted.replace(/\bdiamonds\b/gi, '<span class="clue-red">diamonds</span>');
+            formatted = formatted.replace(/\bred\b/gi, '<span class="clue-red">red</span>');
+            
+            // Black suits and color
+            formatted = formatted.replace(/\bspade\b/gi, '<span class="clue-black">spade</span>');
+            formatted = formatted.replace(/\bspades\b/gi, '<span class="clue-black">spades</span>');
+            formatted = formatted.replace(/\bclub\b/gi, '<span class="clue-black">club</span>');
+            formatted = formatted.replace(/\bclubs\b/gi, '<span class="clue-black">clubs</span>');
+            formatted = formatted.replace(/\bblack\b/gi, '<span class="clue-black">black</span>');
+            
+            return formatted;
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            
+            currentPuzzle.current.forEach((card, index) => {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'card';
+                cardDiv.draggable = true;
+                cardDiv.onclick = () => selectCard(index);
+                
+                // Drag events
+                cardDiv.ondragstart = (e) => handleDragStart(e, index);
+                cardDiv.ondragend = (e) => handleDragEnd(e);
+                cardDiv.ondragover = (e) => handleDragOver(e);
+                cardDiv.ondragenter = (e) => handleDragEnter(e, index);
+                cardDiv.ondragleave = (e) => handleDragLeave(e);
+                cardDiv.ondrop = (e) => handleDrop(e, index);
+                
+                // Map suit names to file format
+                const suitMap = {
+                    'spade': 'S',
+                    'club': 'C',
+                    'heart': 'H',
+                    'diamond': 'D'
+                };
+                
+                const cardImage = `images/${card.num}${suitMap[card.suit]}.png`;
+                
+                cardDiv.innerHTML = `
+                    <img src="${cardImage}" alt="${card.num} of ${card.suit}s" class="card-image">
+                    <div class="speech-bubble">${card.clue}</div>
+                `;
+                
+                grid.appendChild(cardDiv);
+            });
+        }
+
+        function selectCard(index) {
+            if (selectedCard === null) {
+                selectedCard = index;
+                document.querySelectorAll('.card')[index].classList.add('selected');
+            } else if (selectedCard === index) {
+                selectedCard = null;
+                document.querySelectorAll('.card')[index].classList.remove('selected');
+            } else {
+                // Swap cards
+                const temp = currentPuzzle.current[selectedCard];
+                currentPuzzle.current[selectedCard] = currentPuzzle.current[index];
+                currentPuzzle.current[index] = temp;
+                
+                moves++;
+                document.getElementById('moveCount').textContent = moves;
+                selectedCard = null;
+                renderGrid();
+            }
+        }
+
+        function checkSolution() {
+            if (isSolved(currentPuzzle.current, currentPuzzle.solution)) {
+                document.getElementById('message').innerHTML = 
+                    `<span class="victory">🎉 SOLVED in ${moves} ${moves === 1 ? 'guess' : 'guesses'}! 🎉</span>`;
+                highlightCorrect();
+            } else {
+                document.getElementById('message').innerHTML = 
+                    `<span style="color: #ff6b6b">Not quite right yet. Keep trying!</span>`;
+            }
+        }
+
+        function revealSolution() {
+            currentPuzzle.current = [...currentPuzzle.solution];
+            selectedCard = null;
+            renderGrid();
+            document.getElementById('message').innerHTML = 
+                `<span style="color: #FFD700">✨ Solution revealed! ✨</span>`;
+            highlightCorrect();
+        }
+
+        function exportLevel() {
+            if (!currentPuzzle) return;
+            
+            // Create CSV content
+            let csv = 'Position,Number,Suit,Clue\n';
+            
+            currentPuzzle.solution.forEach((card, index) => {
+                const row = Math.floor(index / 3);
+                const col = index % 3;
+                const position = `[${row},${col}]`;
+                const suit = card.suit;
+                const clue = card.clue.replace(/,/g, ';'); // Replace commas in clues with semicolons
+                
+                csv += `${position},${card.num},${suit},"${clue}"\n`;
+            });
+            
+            // Create download link
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mathemagical_level_${Date.now()}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            document.getElementById('message').innerHTML = 
+                `<span style="color: #d4af37">📥 Level exported!</span>`;
+        }
+
+        function handleDragStart(e, index) {
+            draggedIndex = index;
+            e.currentTarget.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragEnd(e) {
+            e.currentTarget.classList.remove('dragging');
+            document.querySelectorAll('.card').forEach(card => {
+                card.classList.remove('drag-over');
+            });
+            draggedIndex = null;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDragEnter(e, index) {
+            if (draggedIndex !== null && draggedIndex !== index) {
+                e.currentTarget.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleDrop(e, dropIndex) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            
+            if (draggedIndex !== null && draggedIndex !== dropIndex) {
+                // Swap cards
+                const temp = currentPuzzle.current[draggedIndex];
+                currentPuzzle.current[draggedIndex] = currentPuzzle.current[dropIndex];
+                currentPuzzle.current[dropIndex] = temp;
+                
+                moves++;
+                document.getElementById('moveCount').textContent = moves;
+                renderGrid();
+            }
+            
+            return false;
+        }
+
+        function highlightCorrect() {
+            document.querySelectorAll('.card').forEach(card => {
+                card.classList.add('correct');
+            });
+        }
+
+        // Animate title letters
+        window.addEventListener('DOMContentLoaded', () => {
+            const title = document.getElementById('title');
+            const text = title.textContent;
+            title.innerHTML = text.split('').map(letter => 
+                `<span>${letter}</span>`
+            ).join('');
+        });
+
+        // Start the game
+        newGame();
+    </script>
+</body>
+</html>

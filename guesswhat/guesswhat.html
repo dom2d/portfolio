@@ -1,0 +1,1653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GUESS WHAT? — DOM2D</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  :root {
+    --gold: #D4AF37;
+    --gold-dim: #B8972E;
+    --gold-bright: #FFD700;
+    --bg: #0a0a0a;
+    --bg2: rgba(255,255,255,0.04);
+    --text: #e8e8e8;
+    --text-dim: #888;
+    --red: #cc4444;
+    --mono: 'DM Mono', monospace;
+    --display: 'Bebas Neue', cursive;
+  }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 920px;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 24px;
+    position: relative;
+  }
+
+  .help-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--gold);
+    border: 1px solid rgba(212,175,55,0.3);
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--mono);
+  }
+
+  .help-btn:hover {
+    background: rgba(212,175,55,0.08);
+    border-color: var(--gold);
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(42px, 8vw, 68px);
+    color: var(--gold);
+    letter-spacing: 6px;
+    margin-bottom: 6px;
+    text-shadow: 0 0 40px rgba(212,175,55,0.4);
+  }
+
+  .subtitle {
+    font-size: 10px;
+    color: var(--gold-dim);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+
+  /* Game Board */
+  .game-board {
+    background: rgba(255,255,255,0.015);
+    border: 1px solid rgba(212,175,55,0.08);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  /* Theme Title */
+  .theme-title {
+    font-family: var(--display);
+    font-size: 32px;
+    letter-spacing: 3px;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  /* Clue Section */
+  .clue-section {
+    margin-bottom: 20px;
+  }
+
+  .clue-header {
+    font-size: 10px;
+    color: #555;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .clue-count {
+    font-family: var(--display);
+    font-size: 14px;
+    color: var(--gold-dim);
+    letter-spacing: 2px;
+  }
+
+  .clues-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .clue-item {
+    background: var(--bg2);
+    border: 1px solid rgba(212,175,55,0.12);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11px;
+    color: #bbb;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s;
+    position: relative;
+    min-height: 48px;
+    perspective: 1000px;
+  }
+
+  .clue-item:hover {
+    border-color: rgba(212,175,55,0.3);
+    background: rgba(212,175,55,0.04);
+    transform: translateY(-1px);
+  }
+
+  .clue-item.flipped {
+    border-color: rgba(212,175,55,0.4);
+    background: rgba(212,175,55,0.06);
+  }
+
+  .clue-card-inner {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: opacity 0.2s;
+  }
+
+  .clue-item:not(.flipped) .clue-card-inner {
+    justify-content: center;
+  }
+
+  .clue-item:not(.flipped) .clue-number,
+  .clue-item:not(.flipped) .clue-text {
+    display: none;
+  }
+
+  .clue-item:not(.flipped) .clue-card-inner::before {
+    content: '?';
+    font-size: 24px;
+    color: var(--gold-dim);
+    font-weight: bold;
+  }
+
+  .clue-number {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 500;
+  }
+
+  .clue-text {
+    flex: 1;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  /* Cards Grid */
+  .faces-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .face-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(212,175,55,0.1);
+    border-radius: 6px;
+    padding: 12px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 56px;
+    position: relative;
+  }
+
+  .face-card:hover:not(.eliminated) {
+    border-color: rgba(212,175,55,0.3);
+    background: rgba(212,175,55,0.03);
+    transform: translateY(-2px);
+  }
+
+  .face-card.eliminated {
+    opacity: 0.25;
+    filter: grayscale(100%);
+    cursor: not-allowed;
+  }
+
+  .face-card.eliminated::after {
+    content: '✗';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 32px;
+    color: var(--red);
+    font-weight: bold;
+  }
+
+  .face-card.winner {
+    animation: rainbow-border 3s linear infinite, pulse 1.2s ease-in-out infinite;
+  }
+
+  @keyframes rainbow-border {
+    0% { border-color: #ff0000; box-shadow: 0 0 20px rgba(255,0,0,0.5); }
+    16% { border-color: #ff8800; box-shadow: 0 0 20px rgba(255,136,0,0.5); }
+    33% { border-color: #ffff00; box-shadow: 0 0 20px rgba(255,255,0,0.5); }
+    50% { border-color: #00ff00; box-shadow: 0 0 20px rgba(0,255,0,0.5); }
+    66% { border-color: #0088ff; box-shadow: 0 0 20px rgba(0,136,255,0.5); }
+    83% { border-color: #8800ff; box-shadow: 0 0 20px rgba(136,0,255,0.5); }
+    100% { border-color: #ff0000; box-shadow: 0 0 20px rgba(255,0,0,0.5); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  .face-name {
+    font-size: 11px;
+    color: var(--text);
+    font-weight: 400;
+    line-height: 1.3;
+  }
+
+  /* Guess Section */
+  .guess-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(212,175,55,0.08);
+  }
+
+  .guess-btn {
+    width: 100%;
+    background: var(--gold);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-family: var(--display);
+    font-size: 20px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    box-shadow: 0 0 28px rgba(212,175,55,0.3);
+    transition: all 0.15s;
+  }
+
+  .guess-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 0 35px rgba(212,175,55,0.5);
+  }
+
+  .guess-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .button-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .small-btn {
+    flex: 1;
+    padding: 10px;
+    background: transparent;
+    color: var(--gold);
+    border: 1px solid rgba(212,175,55,0.3);
+    border-radius: 6px;
+    font-family: var(--display);
+    font-size: 16px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .small-btn:hover {
+    background: rgba(212,175,55,0.08);
+    border-color: var(--gold);
+  }
+
+  #shareBtn {
+    border-color: var(--gold);
+    background: rgba(212,175,55,0.06);
+  }
+
+  /* Messages */
+  .message {
+    text-align: center;
+    padding: 12px;
+    margin: 12px 0;
+    border-radius: 8px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    display: none;
+  }
+
+  .message.show {
+    display: block;
+  }
+
+  .message.success {
+    background: rgba(212,175,55,0.1);
+    border: 1px solid rgba(212,175,55,0.3);
+    color: var(--gold);
+  }
+
+  .message.error {
+    background: rgba(204,68,68,0.08);
+    border: 1px solid rgba(204,68,68,0.2);
+    color: #cc6666;
+  }
+
+  /* Modal */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.85);
+    z-index: 10000;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .modal.show {
+    display: flex;
+  }
+
+  .modal-content {
+    background: #111;
+    border: 1px solid rgba(212,175,55,0.3);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 420px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    background: none;
+    border: none;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+
+  .modal-close:hover {
+    color: var(--gold);
+  }
+
+  .modal h2 {
+    font-family: var(--display);
+    color: var(--gold);
+    font-size: 28px;
+    letter-spacing: 3px;
+    margin-bottom: 16px;
+  }
+
+  .modal p {
+    font-size: 12px;
+    line-height: 1.85;
+    color: #bbb;
+    margin-bottom: 12px;
+  }
+
+  .modal ol {
+    margin-left: 20px;
+    margin-bottom: 12px;
+  }
+
+  .modal li {
+    font-size: 12px;
+    line-height: 1.7;
+    color: #bbb;
+    margin-bottom: 6px;
+  }
+
+  @media (max-width: 640px) {
+    .clues-list {
+      grid-template-columns: 1fr;
+    }
+    
+    .faces-grid {
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    }
+  }
+</style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>GUESS WHAT?</h1>
+            <p class="subtitle">Deduction Puzzle Game</p>
+            <button class="help-btn" id="helpBtn">?</button>
+        </header>
+
+        <div class="game-board">
+            <div class="clue-section">
+                <div class="theme-title" id="themeTitle">Celebrities</div>
+                <div class="clue-header">
+                    <span>Click cards to reveal clues:</span>
+                    <span class="clue-count" id="clueCount">0/8 revealed</span>
+                </div>
+                <div class="clues-list" id="cluesList"></div>
+            </div>
+
+            <div class="message" id="message"></div>
+
+            <div class="faces-grid" id="facesGrid"></div>
+
+            <div class="guess-section">
+                <button class="guess-btn" id="checkBtn" disabled>Check Answer</button>
+                <div class="button-row">
+                    <button class="small-btn" id="revealBtn">Reveal</button>
+                    <button class="small-btn" id="resetBtn">Reset</button>
+                    <button class="small-btn" id="nextBtn">Next</button>
+                    <button class="small-btn" id="shareBtn">Share</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="helpModal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeHelp">&times;</button>
+            <h2>How to Play</h2>
+            
+            <p><strong>Goal:</strong> Find the ONE person who fits ALL the clues using the fewest clues possible.</p>
+            
+            <p><strong>Gameplay:</strong></p>
+            <ol>
+                <li>Click clue cards to reveal them one at a time</li>
+                <li>Eliminate people who match each clue by clicking their card</li>
+                <li>Click again to undo if you make a mistake</li>
+                <li>When only one person remains, click "Check Answer"</li>
+            </ol>
+
+            <p><strong>Scoring:</strong><br>
+            Fewer clues used = better score! Try to solve it with as few reveals as possible.</p>
+
+            <p><strong>Tip:</strong> Process clues carefully. Each clue eliminates people who match that description, so the remaining person is the answer.</p>
+        </div>
+    </div>
+
+    <script>
+
+        const puzzles = [
+            // Puzzle 1: Celebrities - Answer: Ed Sheeran
+            {
+                theme: "Celebrities",
+                items: [
+                    { name: "Ed Sheeran", tags: ["musician", "british", "male", "grammy", "guitar"] },
+                    { name: "Taylor Swift", tags: ["musician", "american", "female", "grammy"] },
+                    { name: "Beyoncé", tags: ["musician", "american", "female", "grammy", "oscar"] },
+                    { name: "Leonardo DiCaprio", tags: ["actor", "american", "male", "oscar"] },
+                    { name: "Meryl Streep", tags: ["actor", "american", "female", "oscar"] },
+                    { name: "Oprah Winfrey", tags: ["tv", "american", "female", "billionaire"] },
+                    { name: "Adele", tags: ["musician", "british", "female", "grammy", "oscar"] },
+                    { name: "Cristiano Ronaldo", tags: ["athlete", "portuguese", "male"] },
+                    { name: "Shakira", tags: ["musician", "colombian", "female", "grammy"] },
+                    { name: "Hugh Jackman", tags: ["actor", "australian", "male"] },
+                    { name: "Idris Elba", tags: ["actor", "british", "male"] },
+                    { name: "Serena Williams", tags: ["athlete", "american", "female"] },
+                    { name: "Barack Obama", tags: ["politician", "american", "male"] },
+                    { name: "Kim Kardashian", tags: ["tv", "american", "female", "billionaire"] },
+                    { name: "Rihanna", tags: ["musician", "american", "female", "grammy", "billionaire"] },
+                    { name: "Dwayne Johnson", tags: ["actor", "american", "male"] },
+                    { name: "Elton John", tags: ["musician", "british", "male", "grammy", "piano"] },
+                    { name: "Tom Hanks", tags: ["actor", "american", "male", "oscar"] },
+                    { name: "BTS", tags: ["musician", "korean", "male", "grammy"] },
+                    { name: "Celine Dion", tags: ["musician", "canadian", "female", "grammy"] }
+                ],
+                clues: [
+                    { text: "Is not an actor", eliminates: (c) => c.tags.includes("actor") },
+                    { text: "Is not an athlete or politician", eliminates: (c) => c.tags.includes("athlete") || c.tags.includes("politician") },
+                    { text: "Is not a TV personality or billionaire", eliminates: (c) => c.tags.includes("tv") || c.tags.includes("billionaire") },
+                    { text: "Is not American", eliminates: (c) => c.tags.includes("american") },
+                    { text: "Is not female", eliminates: (c) => c.tags.includes("female") },
+                    { text: "Is not Australian, Portuguese, Colombian, Korean, or Canadian", eliminates: (c) => ["australian","portuguese","colombian","korean","canadian"].some(t=>c.tags.includes(t)) },
+                    { text: "Has won an Oscar", eliminates: (c) => c.tags.includes("oscar") },
+                    { text: "Not known for piano or classical arrangements", eliminates: (c) => c.tags.includes("piano") }
+                
+                ]
+            },
+            // Puzzle 2: Athletes - Answer: Usain Bolt
+            {
+                theme: "Athletes",
+                items: [
+                    { name: "Michael Jordan", tags: ["basketball", "american", "male", "retired", "team"] },
+                    { name: "Serena Williams", tags: ["tennis", "american", "female", "active", "individual"] },
+                    { name: "Lionel Messi", tags: ["soccer", "argentinian", "male", "active", "team"] },
+                    { name: "Simone Biles", tags: ["gymnastics", "american", "female", "active", "individual"] },
+                    { name: "Tom Brady", tags: ["football", "american", "male", "retired", "team"] },
+                    { name: "Usain Bolt", tags: ["track", "jamaican", "male", "retired", "individual"] },
+                    { name: "Roger Federer", tags: ["tennis", "swiss", "male", "retired", "individual"] },
+                    { name: "LeBron James", tags: ["basketball", "american", "male", "active", "team"] },
+                    { name: "Naomi Osaka", tags: ["tennis", "japanese", "female", "active", "individual"] },
+                    { name: "Cristiano Ronaldo", tags: ["soccer", "portuguese", "male", "active", "team"] },
+                    { name: "Katie Ledecky", tags: ["swimming", "american", "female", "active", "individual"] },
+                    { name: "Novak Djokovic", tags: ["tennis", "serbian", "male", "active", "individual"] },
+                    { name: "Lewis Hamilton", tags: ["racing", "british", "male", "active", "individual"] },
+                    { name: "Mo Farah", tags: ["track", "british", "male", "retired", "individual"] },
+                    { name: "Rafael Nadal", tags: ["tennis", "spanish", "male", "active", "individual"] },
+                    { name: "Eliud Kipchoge", tags: ["track", "kenyan", "male", "active", "individual"] },
+                    { name: "Allyson Felix", tags: ["track", "american", "female", "retired", "individual"] },
+                    { name: "Tiger Woods", tags: ["golf", "american", "male", "active", "individual"] },
+                    { name: "Megan Rapinoe", tags: ["soccer", "american", "female", "retired", "team"] },
+                    { name: "Stephen Curry", tags: ["basketball", "american", "male", "active", "team"] }
+                ],
+                clues: [
+                    { text: "Is not female", eliminates: (c) => c.tags.includes("female") },
+                    { text: "Does not play tennis", eliminates: (c) => c.tags.includes("tennis") },
+                    { text: "Does not play basketball or football", eliminates: (c) => c.tags.includes("basketball") || c.tags.includes("football") },
+                    { text: "Does not play soccer", eliminates: (c) => c.tags.includes("soccer") },
+                    { text: "Is not American", eliminates: (c) => c.tags.includes("american") },
+                    { text: "Is not British, Spanish, Portuguese, or Serbian", eliminates: (c) => ["british","spanish","portuguese","serbian"].some(t=>c.tags.includes(t)) },
+                    { text: "Does not compete in swimming or golf", eliminates: (c) => c.tags.includes("swimming") || c.tags.includes("golf") },
+                    { text: "Is not from Kenya", eliminates: (c) => c.tags.includes("kenyan") }
+                
+                ]
+            },
+                        // Puzzle 3: Musicians - Answer: Freddie Mercury
+            {
+                theme: "Musicians",
+                items: [
+                    { name: "Freddie Mercury", tags: ["british", "male", "rock", "deceased", "band", "theatrical"] },
+                    { name: "Mick Jagger", tags: ["british", "male", "rock", "alive", "band"] },
+                    { name: "Ed Sheeran", tags: ["british", "male", "pop", "alive", "solo", "guitar"] },
+                    { name: "Elton John", tags: ["british", "male", "pop", "alive", "solo", "piano", "piano"] },
+                    { name: "Adele", tags: ["british", "female", "pop", "alive", "solo"] },
+                    { name: "Amy Winehouse", tags: ["british", "female", "soul", "deceased", "solo"] },
+                    { name: "Kate Bush", tags: ["british", "female", "art-pop", "alive", "solo"] },
+                    { name: "John Lennon", tags: ["british", "male", "rock", "deceased", "band", "beatles", "peace-activism"] },
+                    { name: "David Bowie", tags: ["british", "male", "rock", "deceased", "solo", "glam"] },
+                    { name: "Elvis Presley", tags: ["american", "male", "rock", "deceased", "solo"] },
+                    { name: "Jimi Hendrix", tags: ["american", "male", "rock", "deceased", "solo", "guitar"] },
+                    { name: "Prince", tags: ["american", "male", "funk", "deceased", "solo"] },
+                    { name: "Kurt Cobain", tags: ["american", "male", "grunge", "deceased", "band"] },
+                    { name: "Taylor Swift", tags: ["american", "female", "pop", "alive", "solo"] },
+                    { name: "Beyoncé", tags: ["american", "female", "pop", "alive", "solo", "rnb"] },
+                    { name: "Bob Dylan", tags: ["american", "male", "folk", "alive", "solo"] },
+                    { name: "Bob Marley", tags: ["jamaican", "male", "reggae", "deceased", "band"] },
+                    { name: "Whitney Houston", tags: ["american", "female", "pop", "deceased", "solo"] },
+                    { name: "Billie Holiday", tags: ["american", "female", "jazz", "deceased", "solo"] },
+                    { name: "The Edge", tags: ["irish", "male", "rock", "alive", "band"] },
+                ],
+                clues: [
+                    { text: "Not American, Jamaican, or Irish", eliminates: (c) => c.tags.includes("american") || c.tags.includes("jamaican") || c.tags.includes("irish") },
+                    { text: "Is still alive today", eliminates: (c) => c.tags.includes("alive") },
+                    { text: "Not female", eliminates: (c) => c.tags.includes("female") },
+                    { text: "Not a solo artist", eliminates: (c) => c.tags.includes("solo") },
+                    { text: "Not known for folk, funk, grunge, or piano", eliminates: (c) => c.tags.includes("folk") || c.tags.includes("funk") || c.tags.includes("grunge") || c.tags.includes("piano") },
+                    { text: "Not known for peace activism or protest songs", eliminates: (c) => c.tags.includes("peace-activism") || c.tags.includes("folk") },
+                    { text: "Not known for glam rock or a solo persona", eliminates: (c) => c.tags.includes("glam") },
+                    { text: "Not primarily a blues-rock performer", eliminates: (c) => c.tags.includes("guitar") && !c.tags.includes("band") },
+                ]
+            },
+            // Puzzle 4: Movies - Answer: The Godfather
+            {
+                theme: "Classic Movies",
+                items: [
+                    { name: "The Godfather", tags: ["drama", "70s", "crime", "rated-r", "coppola"] },
+                    { name: "Star Wars", tags: ["scifi", "70s", "space", "pg", "lucas"] },
+                    { name: "The Dark Knight", tags: ["action", "2000s", "superhero", "pg13", "nolan"] },
+                    { name: "Pulp Fiction", tags: ["crime", "90s", "crime", "rated-r", "tarantino"] },
+                    { name: "Forrest Gump", tags: ["drama", "90s", "life-story", "pg13", "zemeckis"] },
+                    { name: "Inception", tags: ["scifi", "2000s", "dream", "pg13", "nolan"] },
+                    { name: "The Matrix", tags: ["scifi", "90s", "computer", "rated-r", "wachowski"] },
+                    { name: "Schindler's List", tags: ["drama", "90s", "war", "rated-r", "spielberg"] },
+                    { name: "Goodfellas", tags: ["crime", "90s", "mafia", "rated-r", "scorsese"] },
+                    { name: "Fight Club", tags: ["drama", "90s", "psychological", "rated-r", "fincher"] },
+                    { name: "The Shawshank Redemption", tags: ["drama", "90s", "prison", "rated-r", "darabont"] },
+                    { name: "Titanic", tags: ["romance", "90s", "disaster", "pg13", "cameron"] },
+                    { name: "Jaws", tags: ["thriller", "70s", "ocean", "pg", "spielberg"] },
+                    { name: "E.T.", tags: ["scifi", "80s", "alien", "pg", "spielberg"] },
+                    { name: "Jurassic Park", tags: ["adventure", "90s", "dinosaur", "pg13", "spielberg"] },
+                    { name: "Avatar", tags: ["scifi", "2000s", "alien", "pg13", "cameron"] },
+                    { name: "Casablanca", tags: ["romance", "40s", "war", "pg", "curtiz"] },
+                    { name: "Gladiator", tags: ["action", "2000s", "ancient", "rated-r", "scott"] },
+                    { name: "The Lion King", tags: ["animated", "90s", "animals", "g", "disney"] },
+                    { name: "Toy Story", tags: ["animated", "90s", "toys", "g", "lasseter"] }
+                ],
+                clues: [
+                    { text: "Is not from the 1990s", eliminates: (c) => c.tags.includes("90s") },
+                    { text: "Is not from the 2000s", eliminates: (c) => c.tags.includes("2000s") },
+                    { text: "Is not science fiction", eliminates: (c) => c.tags.includes("scifi") },
+                    { text: "Is not animated", eliminates: (c) => c.tags.includes("animated") },
+                    { text: "Is not rated G or PG", eliminates: (c) => c.tags.includes("g") || c.tags.includes("pg") },
+                    { text: "Was not directed by Spielberg", eliminates: (c) => c.tags.includes("spielberg") },
+                    { text: "Is not from the 1980s or 1940s", eliminates: (c) => c.tags.includes("80s") || c.tags.includes("40s") },
+                    { text: "Is not a romance or thriller", eliminates: (c) => c.tags.includes("romance") || c.tags.includes("thriller") }
+                ]
+            },
+            // Puzzle 5: Countries - Answer: South Korea
+            {
+                theme: "Countries",
+                items: [
+                    { name: "France", tags: ["europe", "large", "western", "romance", "eu"] },
+                    { name: "Japan", tags: ["asia", "medium", "island", "east-asia", "developed"] },
+                    { name: "Brazil", tags: ["americas", "large", "coastal", "south-america", "portuguese"] },
+                    { name: "Egypt", tags: ["africa", "medium", "coastal", "middle-east", "arabic"] },
+                    { name: "South Korea", tags: ["asia", "medium", "peninsula", "east-asia", "developed"] },
+                    { name: "Australia", tags: ["oceania", "large", "island", "english", "developed"] },
+                    { name: "Germany", tags: ["europe", "large", "central", "germanic", "eu"] },
+                    { name: "India", tags: ["asia", "huge", "coastal", "south-asia", "hindi"] },
+                    { name: "Mexico", tags: ["americas", "large", "coastal", "north-america", "spanish"] },
+                    { name: "Italy", tags: ["europe", "medium", "peninsula", "romance", "eu"] },
+                    { name: "Canada", tags: ["americas", "huge", "coastal", "north-america", "english"] },
+                    { name: "Thailand", tags: ["asia", "medium", "coastal", "southeast-asia", "thai"] },
+                    { name: "Argentina", tags: ["americas", "large", "coastal", "south-america", "spanish"] },
+                    { name: "Turkey", tags: ["asia", "large", "coastal", "middle-east", "turkish"] },
+                    { name: "Spain", tags: ["europe", "large", "coastal", "romance", "eu"] },
+                    { name: "Sweden", tags: ["europe", "medium", "coastal", "nordic", "eu"] },
+                    { name: "Vietnam", tags: ["asia", "medium", "coastal", "southeast-asia", "vietnamese"] },
+                    { name: "Philippines", tags: ["asia", "medium", "island", "southeast-asia", "filipino"] },
+                    { name: "New Zealand", tags: ["oceania", "small", "island", "english", "developed"] },
+                    { name: "Indonesia", tags: ["asia", "large", "island", "southeast-asia", "indonesian"] }
+                ],
+                clues: [
+                    { text: "Is not in Europe", eliminates: (c) => c.tags.includes("europe") },
+                    { text: "Is not in the Americas", eliminates: (c) => c.tags.includes("americas") },
+                    { text: "Is not in Africa", eliminates: (c) => c.tags.includes("africa") },
+                    { text: "Is not an island nation", eliminates: (c) => c.tags.includes("island") },
+                    { text: "Is not in Southeast Asia", eliminates: (c) => c.tags.includes("southeast-asia") },
+                    { text: "Is not in South Asia", eliminates: (c) => c.tags.includes("south-asia") },
+                    { text: "Is not in Oceania", eliminates: (c) => c.tags.includes("oceania") },
+                    { text: "Is not in the Middle East", eliminates: (c) => c.tags.includes("middle-east") },
+                ]
+            },
+                        // Puzzle 6: Video Games - Answer: Zelda: Breath of the Wild
+            {
+                theme: "Video Games",
+                items: [
+                    { name: "Zelda: Breath of the Wild", tags: ["nintendo", "switch", "single-player", "open-world", "fantasy", "action-adventure"] },
+                    { name: "Minecraft", tags: ["pc", "xbox", "playstation", "multiplayer", "sandbox"] },
+                    { name: "Fortnite", tags: ["pc", "xbox", "playstation", "multiplayer", "shooter", "free"] },
+                    { name: "Call of Duty", tags: ["pc", "xbox", "playstation", "multiplayer", "shooter"] },
+                    { name: "Grand Theft Auto V", tags: ["pc", "xbox", "playstation", "multiplayer", "open-world"] },
+                    { name: "Tetris", tags: ["pc", "nintendo", "single-player", "puzzle", "classic"] },
+                    { name: "The Sims 4", tags: ["pc", "xbox", "playstation", "single-player", "simulation"] },
+                    { name: "World of Warcraft", tags: ["pc", "multiplayer", "rpg", "subscription"] },
+                    { name: "Among Us", tags: ["pc", "xbox", "playstation", "multiplayer", "social"] },
+                    { name: "League of Legends", tags: ["pc", "multiplayer", "moba", "free"] },
+                    { name: "Super Mario Odyssey", tags: ["nintendo", "switch", "single-player", "platformer", "colorful"] },
+                    { name: "Animal Crossing", tags: ["nintendo", "switch", "single-player", "simulation"] },
+                    { name: "Overwatch", tags: ["pc", "xbox", "playstation", "multiplayer", "shooter"] },
+                    { name: "Roblox", tags: ["pc", "xbox", "multiplayer", "sandbox", "free"] },
+                    { name: "Halo: Combat Evolved", tags: ["pc", "xbox", "multiplayer", "shooter"] },
+                    { name: "Street Fighter II", tags: ["pc", "xbox", "playstation", "multiplayer", "fighting"] },
+                    { name: "Pac-Man", tags: ["pc", "xbox", "playstation", "single-player", "arcade", "classic"] },
+                    { name: "Stardew Valley", tags: ["pc", "xbox", "playstation", "single-player", "simulation", "indie"] },
+                    { name: "Elden Ring", tags: ["pc", "xbox", "playstation", "single-player", "fantasy", "action-adventure"] },
+                    { name: "Pokemon Red", tags: ["nintendo", "single-player", "rpg", "classic", "turn-based"] },
+                ],
+                clues: [
+                    { text: "Supports online multiplayer", eliminates: (c) => c.tags.includes("multiplayer") },
+                    { text: "Is available on PC", eliminates: (c) => c.tags.includes("pc") },
+                    { text: "Is available on Xbox or PlayStation", eliminates: (c) => c.tags.includes("xbox") || c.tags.includes("playstation") },
+                    { text: "Is a simulation or sandbox game", eliminates: (c) => c.tags.includes("simulation") || c.tags.includes("sandbox") },
+                    { text: "Is a shooter, fighting, or arcade game", eliminates: (c) => c.tags.includes("shooter") || c.tags.includes("fighting") || c.tags.includes("arcade") },
+                    { text: "Is a role-playing game or MOBA", eliminates: (c) => c.tags.includes("rpg") || c.tags.includes("moba") || c.tags.includes("turn-based") },
+                    { text: "Is a platformer or puzzle game", eliminates: (c) => c.tags.includes("platformer") || c.tags.includes("puzzle") },
+                    { text: "Not available on Nintendo Switch", eliminates: (c) => !c.tags.includes("switch") },
+                ]
+            },
+            // Puzzle 7: Animals - Answer: Penguin
+            {
+                theme: "Animals",
+                items: [
+                    { name: "Lion", tags: ["mammal", "carnivore", "africa", "land", "big"] },
+                    { name: "Elephant", tags: ["mammal", "herbivore", "africa", "land", "huge"] },
+                    { name: "Penguin", tags: ["bird", "carnivore", "antarctica", "water", "medium"] },
+                    { name: "Dolphin", tags: ["mammal", "carnivore", "ocean", "water", "medium"] },
+                    { name: "Kangaroo", tags: ["mammal", "herbivore", "australia", "land", "big"] },
+                    { name: "Panda", tags: ["mammal", "herbivore", "asia", "land", "big"] },
+                    { name: "Eagle", tags: ["bird", "carnivore", "americas", "flying", "medium"] },
+                    { name: "Turtle", tags: ["reptile", "omnivore", "ocean", "water", "medium"] },
+                    { name: "Wolf", tags: ["mammal", "carnivore", "americas", "land", "medium"] },
+                    { name: "Giraffe", tags: ["mammal", "herbivore", "africa", "land", "huge"] },
+                    { name: "Octopus", tags: ["invertebrate", "carnivore", "ocean", "water", "medium"] },
+                    { name: "Tiger", tags: ["mammal", "carnivore", "asia", "land", "big"] },
+                    { name: "Parrot", tags: ["bird", "omnivore", "americas", "flying", "small"] },
+                    { name: "Crocodile", tags: ["reptile", "carnivore", "africa", "water", "big"] },
+                    { name: "Koala", tags: ["mammal", "herbivore", "australia", "land", "medium"] },
+                    { name: "Shark", tags: ["fish", "carnivore", "ocean", "water", "big"] },
+                    { name: "Gorilla", tags: ["mammal", "herbivore", "africa", "land", "huge"] },
+                    { name: "Owl", tags: ["bird", "carnivore", "americas", "flying", "medium"] },
+                    { name: "Snake", tags: ["reptile", "carnivore", "americas", "land", "medium"] },
+                    { name: "Polar Bear", tags: ["mammal", "carnivore", "arctic", "land", "huge"] }
+                ],
+                clues: [
+                    { text: "Is not a mammal", eliminates: (c) => c.tags.includes("mammal") },
+                    { text: "Is not a herbivore", eliminates: (c) => c.tags.includes("herbivore") },
+                    { text: "Is not from Africa", eliminates: (c) => c.tags.includes("africa") },
+                    { text: "Is not primarily land-based", eliminates: (c) => c.tags.includes("land") },
+                    { text: "Does not live in the ocean", eliminates: (c) => c.tags.includes("ocean") },
+                    { text: "Cannot fly", eliminates: (c) => c.tags.includes("flying") },
+                    { text: "Is not from the Americas", eliminates: (c) => c.tags.includes("americas") },
+                    { text: "Is not a reptile", eliminates: (c) => c.tags.includes("reptile") },
+                ]
+            },
+                        // Puzzle 8: Foods - Answer: Sushi
+            {
+                theme: "Foods",
+                items: [
+                    { name: "Sushi", tags: ["japanese", "raw", "cold", "fish", "rice", "hand-held"] },
+                    { name: "Pizza", tags: ["italian", "cooked", "hot", "cheese", "carbs", "baked"] },
+                    { name: "Burger", tags: ["american", "cooked", "hot", "meat", "carbs", "fast-food"] },
+                    { name: "Tacos", tags: ["mexican", "cooked", "hot", "meat", "carbs", "hand-held"] },
+                    { name: "Pasta", tags: ["italian", "cooked", "hot", "carbs", "sauce"] },
+                    { name: "Salad", tags: ["international", "raw", "cold", "vegetables", "healthy"] },
+                    { name: "Ramen", tags: ["japanese", "cooked", "hot", "carbs", "soup", "noodles"] },
+                    { name: "Steak", tags: ["american", "cooked", "hot", "meat", "protein"] },
+                    { name: "Ice Cream", tags: ["international", "frozen", "cold", "dessert", "sweet"] },
+                    { name: "Fried Rice", tags: ["chinese", "cooked", "hot", "rice", "carbs"] },
+                    { name: "Croissant", tags: ["french", "cooked", "warm", "carbs", "breakfast", "baked"] },
+                    { name: "Curry", tags: ["indian", "cooked", "hot", "spicy", "sauce"] },
+                    { name: "Pho", tags: ["vietnamese", "cooked", "hot", "soup", "noodles"] },
+                    { name: "Falafel", tags: ["middle-eastern", "cooked", "hot", "vegetarian", "carbs"] },
+                    { name: "Sashimi", tags: ["japanese", "raw", "cold", "fish", "protein"] },
+                    { name: "Oysters", tags: ["french", "raw", "cold", "seafood", "luxury"] },
+                    { name: "Guacamole", tags: ["mexican", "raw", "cold", "vegetables", "dip"] },
+                    { name: "Paella", tags: ["spanish", "cooked", "hot", "rice", "seafood"] },
+                    { name: "Pad Thai", tags: ["thai", "cooked", "hot", "carbs", "noodles", "stir-fried"] },
+                    { name: "Dim Sum", tags: ["chinese", "cooked", "hot", "meat", "small-bites"] },
+                ],
+                clues: [
+                    { text: "Is a cooked dish", eliminates: (c) => c.tags.includes("cooked") },
+                    { text: "Is served hot or warm", eliminates: (c) => c.tags.includes("hot") || c.tags.includes("warm") },
+                    { text: "Is a dessert, soup, or frozen treat", eliminates: (c) => c.tags.includes("dessert") || c.tags.includes("soup") || c.tags.includes("frozen") },
+                    { text: "Is primarily a vegetable or dip dish", eliminates: (c) => c.tags.includes("vegetables") || c.tags.includes("dip") },
+                    { text: "Is not from Japan", eliminates: (c) => !c.tags.includes("japanese") },
+                    { text: "Does not contain fish", eliminates: (c) => !c.tags.includes("fish") },
+                    { text: "Does not contain rice", eliminates: (c) => !c.tags.includes("rice") },
+                    { text: "Is French seafood", eliminates: (c) => c.tags.includes("french") && c.tags.includes("seafood") },
+                ]
+            }
+        ];
+
+
+        // Extend puzzles with additional categories
+        const additionalPuzzles = [
+            // Puzzle 9: Singers - Answer: Billie Eilish
+            {
+                theme: "Singers",
+                items: [
+                    { name: "Billie Eilish", tags: ["american", "female", "pop", "alive", "young", "grammy", "dark-pop", "whispery"] },
+                    { name: "Frank Sinatra", tags: ["american", "male", "jazz", "deceased", "classic"] },
+                    { name: "Celine Dion", tags: ["canadian", "female", "pop", "alive", "classic", "power-ballad"] },
+                    { name: "Bruno Mars", tags: ["american", "male", "pop", "alive", "grammy", "rnb"] },
+                    { name: "Dolly Parton", tags: ["american", "female", "country", "alive", "classic"] },
+                    { name: "Elton John", tags: ["british", "male", "pop", "alive", "classic", "grammy", "piano", "piano"] },
+                    { name: "Dua Lipa", tags: ["british", "female", "pop", "alive", "young", "grammy", "dance"] },
+                    { name: "The Weeknd", tags: ["canadian", "male", "rnb", "alive", "young", "grammy"] },
+                    { name: "Mariah Carey", tags: ["american", "female", "pop", "alive", "classic", "grammy"] },
+                    { name: "Post Malone", tags: ["american", "male", "hiphop", "alive", "young"] },
+                    { name: "Shania Twain", tags: ["canadian", "female", "country", "alive", "classic"] },
+                    { name: "Stevie Wonder", tags: ["american", "male", "soul", "alive", "classic", "grammy"] },
+                    { name: "Harry Styles", tags: ["british", "male", "pop", "alive", "young", "grammy"] },
+                    { name: "Cher", tags: ["american", "female", "pop", "alive", "classic"] },
+                    { name: "Drake", tags: ["canadian", "male", "hiphop", "alive", "young", "grammy"] },
+                    { name: "Nicki Minaj", tags: ["american", "female", "hiphop", "alive", "young"] },
+                    { name: "Olivia Rodrigo", tags: ["american", "female", "pop", "alive", "young", "grammy", "debut-teen"] },
+                    { name: "John Legend", tags: ["american", "male", "rnb", "alive", "grammy"] },
+                    { name: "Adele", tags: ["british", "female", "pop", "alive", "classic", "grammy"] },
+                    { name: "Lizzo", tags: ["american", "female", "pop", "alive", "young", "grammy", "flute"] },
+                ],
+                clues: [
+                    { text: "Not male", eliminates: (c) => c.tags.includes("male") },
+                    { text: "Not British or Canadian", eliminates: (c) => c.tags.includes("british") || c.tags.includes("canadian") },
+                    { text: "Was famous before 2010 (classic era)", eliminates: (c) => c.tags.includes("classic") },
+                    { text: "Is hip-hop, R&B, or soul", eliminates: (c) => c.tags.includes("hiphop") || c.tags.includes("rnb") || c.tags.includes("soul") },
+                    { text: "Plays country music", eliminates: (c) => c.tags.includes("country") },
+                    { text: "Has not won a Grammy", eliminates: (c) => !c.tags.includes("grammy") },
+                    { text: "Is known for a powerful or uplifting style", eliminates: (c) => c.tags.includes("power-ballad") || c.tags.includes("dance") || c.tags.includes("flute") },
+                    { text: "Is not known for whispery or atmospheric vocals", eliminates: (c) => !c.tags.includes("whispery") },
+                ]
+            },
+                        // Puzzle 10: Bands - Answer: Radiohead
+            {
+                theme: "Bands",
+                items: [
+                    { name: "Radiohead", tags: ["british", "alternative", "90s", "active", "art-rock"] },
+                    { name: "The Beatles", tags: ["british", "rock", "60s", "classic", "dissolved"] },
+                    { name: "Metallica", tags: ["american", "metal", "80s", "active", "heavy"] },
+                    { name: "Coldplay", tags: ["british", "pop-rock", "2000s", "active", "arena"] },
+                    { name: "Nirvana", tags: ["american", "grunge", "90s", "dissolved", "classic"] },
+                    { name: "Fleetwood Mac", tags: ["british", "rock", "70s", "active", "classic"] },
+                    { name: "BTS", tags: ["korean", "kpop", "2010s", "active"] },
+                    { name: "AC/DC", tags: ["australian", "rock", "70s", "active", "heavy"] },
+                    { name: "U2", tags: ["irish", "rock", "80s", "active", "arena"] },
+                    { name: "Red Hot Chili Peppers", tags: ["american", "rock", "90s", "active", "funk-rock"] },
+                    { name: "Imagine Dragons", tags: ["american", "pop-rock", "2010s", "active", "arena"] },
+                    { name: "One Direction", tags: ["british", "pop", "2010s", "dissolved"] },
+                    { name: "The Rolling Stones", tags: ["british", "rock", "60s", "active", "classic"] },
+                    { name: "Linkin Park", tags: ["american", "nu-metal", "2000s", "active"] },
+                    { name: "Daft Punk", tags: ["french", "electronic", "90s", "dissolved"] },
+                    { name: "Green Day", tags: ["american", "punk", "90s", "active"] },
+                    { name: "Maroon 5", tags: ["american", "pop-rock", "2000s", "active"] },
+                    { name: "The Killers", tags: ["american", "alternative", "2000s", "active"] },
+                    { name: "Arcade Fire", tags: ["canadian", "indie", "2000s", "active"] },
+                    { name: "Pearl Jam", tags: ["american", "grunge", "90s", "active", "rock"] },
+                ],
+                clues: [
+                    { text: "From the 2000s or 2010s", eliminates: (c) => c.tags.includes("2000s") || c.tags.includes("2010s") },
+                    { text: "Has dissolved or broken up", eliminates: (c) => c.tags.includes("dissolved") },
+                    { text: "Not British", eliminates: (c) => !c.tags.includes("british") },
+                    { text: "From the 60s or 70s", eliminates: (c) => c.tags.includes("60s") || c.tags.includes("70s") },
+                    { text: "Known for arena rock, pop-rock, or pop", eliminates: (c) => c.tags.includes("arena") || c.tags.includes("pop-rock") || c.tags.includes("pop") },
+                    { text: "Metal, punk, grunge, or nu-metal", eliminates: (c) => c.tags.includes("metal") || c.tags.includes("punk") || c.tags.includes("grunge") || c.tags.includes("nu-metal") },
+                    { text: "Known for funk, heavy riffs, or electronic sound", eliminates: (c) => c.tags.includes("funk-rock") || c.tags.includes("heavy") || c.tags.includes("electronic") },
+                    { text: "From the 80s", eliminates: (c) => c.tags.includes("80s") },
+                ]
+            },
+                        // Puzzle 11: TV Stars - Answer: Bryan Cranston
+            {
+                theme: "TV Stars",
+                items: [
+                    { name: "Bryan Cranston", tags: ["american", "male", "drama", "cable", "emmy", "crime", "teacher"] },
+                    { name: "Jennifer Aniston", tags: ["american", "female", "comedy", "network", "emmy", "sitcom"] },
+                    { name: "Idris Elba", tags: ["british", "male", "drama", "cable", "detective"] },
+                    { name: "Sofia Vergara", tags: ["colombian", "female", "comedy", "network", "sitcom"] },
+                    { name: "Kit Harington", tags: ["british", "male", "fantasy", "cable"] },
+                    { name: "Mindy Kaling", tags: ["american", "female", "comedy", "network", "creator"] },
+                    { name: "Tony Shalhoub", tags: ["american", "male", "comedy", "network", "emmy", "detective"] },
+                    { name: "Elisabeth Moss", tags: ["american", "female", "drama", "cable", "emmy", "dystopian"] },
+                    { name: "Hugh Laurie", tags: ["british", "male", "drama", "network", "emmy", "medical"] },
+                    { name: "Julia Louis-Dreyfus", tags: ["american", "female", "comedy", "cable", "emmy", "sitcom"] },
+                    { name: "Kiefer Sutherland", tags: ["canadian", "male", "drama", "network", "emmy", "action"] },
+                    { name: "Sarah Jessica Parker", tags: ["american", "female", "drama", "cable", "emmy", "fashion"] },
+                    { name: "Steve Carell", tags: ["american", "male", "comedy", "network", "sitcom", "creator"] },
+                    { name: "Viola Davis", tags: ["american", "female", "drama", "network", "emmy", "legal"] },
+                    { name: "James Gandolfini", tags: ["american", "male", "drama", "cable", "emmy", "mob"] },
+                    { name: "Tina Fey", tags: ["american", "female", "comedy", "network", "emmy", "creator"] },
+                    { name: "David Tennant", tags: ["british", "male", "drama", "network", "scifi", "detective"] },
+                    { name: "Amy Poehler", tags: ["american", "female", "comedy", "network", "emmy", "sitcom"] },
+                    { name: "Jon Hamm", tags: ["american", "male", "drama", "cable", "emmy", "advertising"] },
+                    { name: "Claire Danes", tags: ["american", "female", "drama", "cable", "emmy", "spy"] },
+                ],
+                clues: [
+                    { text: "Not female", eliminates: (c) => c.tags.includes("female") },
+                    { text: "Not in a comedy or sitcom", eliminates: (c) => c.tags.includes("comedy") || c.tags.includes("sitcom") },
+                    { text: "Primarily on network TV (not cable/streaming)", eliminates: (c) => c.tags.includes("network") },
+                    { text: "Not British", eliminates: (c) => c.tags.includes("british") },
+                    { text: "Not Canadian", eliminates: (c) => c.tags.includes("canadian") },
+                    { text: "Character is in a mob or advertising world", eliminates: (c) => c.tags.includes("mob") || c.tags.includes("advertising") },
+                    { text: "Show involves sci-fi, fantasy, or spy themes", eliminates: (c) => c.tags.includes("scifi") || c.tags.includes("fantasy") || c.tags.includes("spy") },
+                    { text: "Has not won an Emmy", eliminates: (c) => !c.tags.includes("emmy") },
+                ]
+            },
+            // Puzzle 12: 1990s Movie Stars - Answer: Keanu Reeves
+            {
+                theme: "1990s Movie Stars",
+                items: [
+                    { name: "Keanu Reeves", tags: ["action", "canadian", "male", "blockbuster"] },
+                    { name: "Julia Roberts", tags: ["romance", "american", "female", "oscar", "blockbuster"] },
+                    { name: "Tom Cruise", tags: ["action", "american", "male", "blockbuster"] },
+                    { name: "Jodie Foster", tags: ["drama", "american", "female", "oscar"] },
+                    { name: "Will Smith", tags: ["action", "american", "male", "blockbuster"] },
+                    { name: "Arnold Schwarzenegger", tags: ["action", "austrian", "male", "blockbuster"] },
+                    { name: "Meg Ryan", tags: ["romance", "american", "female", "blockbuster"] },
+                    { name: "Denzel Washington", tags: ["drama", "american", "male", "oscar"] },
+                    { name: "Jim Carrey", tags: ["comedy", "canadian", "male", "blockbuster"] },
+                    { name: "Nicolas Cage", tags: ["action", "american", "male", "oscar", "blockbuster"] },
+                    { name: "Hugh Grant", tags: ["romance", "british", "male", "blockbuster"] },
+                    { name: "Robin Williams", tags: ["comedy", "american", "male", "oscar", "blockbuster"] },
+                    { name: "Anthony Hopkins", tags: ["drama", "british", "male", "oscar"] },
+                    { name: "Sharon Stone", tags: ["thriller", "american", "female"] },
+                    { name: "Pierce Brosnan", tags: ["action", "irish", "male", "blockbuster"] },
+                    { name: "Juliette Binoche", tags: ["drama", "french", "female", "oscar"] },
+                    { name: "Russell Crowe", tags: ["drama", "australian", "male", "oscar"] },
+                    { name: "Antonio Banderas", tags: ["action", "spanish", "male", "blockbuster"] },
+                    { name: "Cate Blanchett", tags: ["drama", "australian", "female", "oscar"] },
+                    { name: "Winona Ryder", tags: ["drama", "american", "female"] }
+                ],
+                clues: [
+                    { text: "Is not female", eliminates: (c) => c.tags.includes("female") },
+                    { text: "Has won an Oscar", eliminates: (c) => c.tags.includes("oscar") },
+                    { text: "Is not British, Irish, Australian, French, or Spanish", eliminates: (c) => ["british","irish","australian","french","spanish"].some(t=>c.tags.includes(t)) },
+                    { text: "Is not Austrian", eliminates: (c) => c.tags.includes("austrian") },
+                    { text: "Is not primarily known for comedy", eliminates: (c) => c.tags.includes("comedy") },
+                    { text: "Is not primarily known for drama or thriller", eliminates: (c) => c.tags.includes("drama") || c.tags.includes("thriller") },
+                    { text: "Is not known for romance", eliminates: (c) => c.tags.includes("romance") },
+                    { text: "Is not American", eliminates: (c) => c.tags.includes("american") }
+                
+                ]
+            },
+                        // Puzzle 13: 2000s Movie Stars - Answer: Heath Ledger
+            {
+                theme: "2000s Movie Stars",
+                items: [
+                    { name: "Heath Ledger", tags: ["australian", "male", "oscar", "drama", "indie"] },
+                    { name: "Cate Blanchett", tags: ["australian", "female", "oscar", "drama", "prestige"] },
+                    { name: "Hugh Jackman", tags: ["australian", "male", "superhero", "musical", "franchise"] },
+                    { name: "Nicole Kidman", tags: ["australian", "female", "oscar", "drama", "prestige"] },
+                    { name: "Russell Crowe", tags: ["australian", "male", "oscar", "action", "historical"] },
+                    { name: "Scarlett Johansson", tags: ["american", "female", "superhero", "franchise", "action"] },
+                    { name: "Natalie Portman", tags: ["american", "female", "oscar", "drama", "prestige"] },
+                    { name: "Halle Berry", tags: ["american", "female", "oscar", "action", "superhero"] },
+                    { name: "Reese Witherspoon", tags: ["american", "female", "oscar", "drama", "comedy"] },
+                    { name: "Angelina Jolie", tags: ["american", "female", "oscar", "action", "blockbuster"] },
+                    { name: "Robert Downey Jr.", tags: ["american", "male", "superhero", "franchise", "oscar"] },
+                    { name: "Tobey Maguire", tags: ["american", "male", "superhero", "franchise", "drama"] },
+                    { name: "Will Smith", tags: ["american", "male", "action", "comedy", "blockbuster"] },
+                    { name: "Christian Bale", tags: ["british", "male", "superhero", "oscar", "action"] },
+                    { name: "Daniel Craig", tags: ["british", "male", "action", "franchise", "spy"] },
+                    { name: "Orlando Bloom", tags: ["british", "male", "action", "franchise", "fantasy"] },
+                    { name: "Jude Law", tags: ["british", "male", "drama", "indie", "charming"] },
+                    { name: "Jake Gyllenhaal", tags: ["american", "male", "drama", "indie", "psychological"] },
+                    { name: "Ryan Gosling", tags: ["canadian", "male", "drama", "indie"] },
+                    { name: "Viggo Mortensen", tags: ["american", "male", "drama", "fantasy", "indie"] },
+                ],
+                clues: [
+                    { text: "Is in a superhero or major franchise film", eliminates: (c) => c.tags.includes("superhero") || c.tags.includes("franchise") },
+                    { text: "Is female", eliminates: (c) => c.tags.includes("female") },
+                    { text: "Is American", eliminates: (c) => c.tags.includes("american") },
+                    { text: "Is primarily known for action films", eliminates: (c) => c.tags.includes("action") && !c.tags.includes("drama") },
+                    { text: "Is British or Canadian", eliminates: (c) => c.tags.includes("british") || c.tags.includes("canadian") },
+                    { text: "Is known for fantasy or spy films", eliminates: (c) => c.tags.includes("fantasy") || c.tags.includes("spy") },
+                    { text: "Did not win an Oscar", eliminates: (c) => !c.tags.includes("oscar") },
+                    { text: "Is known for comedy or musicals", eliminates: (c) => c.tags.includes("comedy") || c.tags.includes("musical") },
+                ]
+            },
+                        // Puzzle 14: 2010s Movie Stars - Answer: Lupita Nyong'o
+            {
+                theme: "2010s Movie Stars",
+                items: [
+                    { name: "Lupita Nyong'o", tags: ["kenyan", "female", "oscar", "drama", "african"] },
+                    { name: "Jennifer Lawrence", tags: ["american", "female", "oscar", "drama", "action"] },
+                    { name: "Brie Larson", tags: ["american", "female", "oscar", "superhero", "action"] },
+                    { name: "Emma Stone", tags: ["american", "female", "oscar", "drama", "comedy"] },
+                    { name: "Viola Davis", tags: ["american", "female", "oscar", "drama", "tv-crossover"] },
+                    { name: "Octavia Spencer", tags: ["american", "female", "oscar", "drama", "supporting"] },
+                    { name: "Alicia Vikander", tags: ["swedish", "female", "oscar", "drama", "action"] },
+                    { name: "Saoirse Ronan", tags: ["irish", "female", "drama", "indie"] },
+                    { name: "Cate Blanchett", tags: ["australian", "female", "oscar", "drama", "prestige"] },
+                    { name: "Sandra Bullock", tags: ["american", "female", "oscar", "action", "comedy"] },
+                    { name: "Charlize Theron", tags: ["south-african", "female", "oscar", "action", "drama"] },
+                    { name: "Chris Evans", tags: ["american", "male", "superhero", "action", "blockbuster"] },
+                    { name: "Michael B. Jordan", tags: ["american", "male", "drama", "action"] },
+                    { name: "Tom Hardy", tags: ["british", "male", "drama", "action"] },
+                    { name: "Chadwick Boseman", tags: ["american", "male", "superhero", "action", "drama"] },
+                    { name: "Benedict Cumberbatch", tags: ["british", "male", "superhero", "drama", "franchise"] },
+                    { name: "Tom Holland", tags: ["british", "male", "superhero", "franchise", "action"] },
+                    { name: "Timothée Chalamet", tags: ["american", "male", "drama", "indie"] },
+                    { name: "Daniel Kaluuya", tags: ["british", "male", "oscar", "drama", "indie"] },
+                    { name: "Rami Malek", tags: ["american", "male", "oscar", "drama", "biopic"] },
+                ],
+                clues: [
+                    { text: "Is in superhero or franchise films", eliminates: (c) => c.tags.includes("superhero") || c.tags.includes("franchise") },
+                    { text: "Is male", eliminates: (c) => c.tags.includes("male") },
+                    { text: "Is known for comedy films", eliminates: (c) => c.tags.includes("comedy") },
+                    { text: "Is American", eliminates: (c) => c.tags.includes("american") },
+                    { text: "Is primarily known for action films", eliminates: (c) => c.tags.includes("action") && !c.tags.includes("drama") },
+                    { text: "Did not win an Oscar", eliminates: (c) => !c.tags.includes("oscar") },
+                    { text: "Is European or Australian", eliminates: (c) => c.tags.includes("swedish") || c.tags.includes("irish") || c.tags.includes("british") || c.tags.includes("australian") },
+                    { text: "Is South African", eliminates: (c) => c.tags.includes("south-african") },
+                ]
+            },
+                        // Puzzle 15: 2020s Movie Stars - Answer: Austin Butler
+            {
+                theme: "2020s Movie Stars",
+                items: [
+                    { name: "Austin Butler", tags: ["american", "male", "drama", "indie", "biopic", "musician-role"] },
+                    { name: "Florence Pugh", tags: ["british", "female", "drama", "blockbuster", "action"] },
+                    { name: "Pedro Pascal", tags: ["chilean", "male", "action", "blockbuster", "franchise", "tv-star"] },
+                    { name: "Sydney Sweeney", tags: ["american", "female", "drama", "tv-star", "indie"] },
+                    { name: "Paul Mescal", tags: ["irish", "male", "drama", "indie", "literary"] },
+                    { name: "Anya Taylor-Joy", tags: ["british", "female", "drama", "thriller", "tv-star"] },
+                    { name: "Jacob Elordi", tags: ["australian", "male", "drama", "indie", "romance"] },
+                    { name: "Jenna Ortega", tags: ["american", "female", "horror", "thriller", "tv-star"] },
+                    { name: "Barry Keoghan", tags: ["irish", "male", "drama", "indie", "thriller"] },
+                    { name: "Zendaya", tags: ["american", "female", "drama", "blockbuster", "tv-star"] },
+                    { name: "Andrew Garfield", tags: ["british", "male", "drama", "superhero", "franchise"] },
+                    { name: "Mia Goth", tags: ["british", "female", "horror", "indie", "arthouse"] },
+                    { name: "Daisy Edgar-Jones", tags: ["british", "female", "drama", "thriller", "blockbuster"] },
+                    { name: "Miles Teller", tags: ["american", "male", "drama", "blockbuster", "action"] },
+                    { name: "Ana de Armas", tags: ["cuban", "female", "drama", "action", "blockbuster"] },
+                    { name: "Michelle Yeoh", tags: ["malaysian", "female", "oscar", "action", "blockbuster"] },
+                    { name: "Daniel Kaluuya", tags: ["british", "male", "oscar", "drama", "indie"] },
+                    { name: "Timothée Chalamet", tags: ["american", "male", "drama", "indie", "literary"] },
+                    { name: "Cate Blanchett", tags: ["australian", "female", "oscar", "drama", "prestige"] },
+                    { name: "Adam Driver", tags: ["american", "male", "drama", "indie", "franchise"] },
+                ],
+                clues: [
+                    { text: "Is female", eliminates: (c) => c.tags.includes("female") },
+                    { text: "Is British", eliminates: (c) => c.tags.includes("british") },
+                    { text: "Is Irish or Australian", eliminates: (c) => c.tags.includes("irish") || c.tags.includes("australian") },
+                    { text: "Is primarily in blockbusters", eliminates: (c) => c.tags.includes("blockbuster") && !c.tags.includes("indie") },
+                    { text: "Is in superhero or franchise films", eliminates: (c) => c.tags.includes("superhero") || c.tags.includes("franchise") },
+                    { text: "Is known for horror or thrillers", eliminates: (c) => c.tags.includes("horror") || c.tags.includes("thriller") },
+                    { text: "Is not American", eliminates: (c) => !c.tags.includes("american") },
+                    { text: "Is known for literary adaptations", eliminates: (c) => c.tags.includes("literary") },
+                ]
+            },
+                        // Puzzle 16: Cartoon Characters - Answer: SpongeBob SquarePants
+            {
+                theme: "Cartoon Characters",
+                items: [
+                    { name: "SpongeBob SquarePants", tags: ["nickelodeon", "underwater", "sea-creature", "male", "comedy", "chef", "optimistic"] },
+                    { name: "Bugs Bunny", tags: ["looney-tunes", "animal", "classic", "male", "comedy", "sarcastic"] },
+                    { name: "Homer Simpson", tags: ["fox", "human", "modern", "male", "comedy", "satire"] },
+                    { name: "Mickey Mouse", tags: ["disney", "animal", "classic", "male", "comedy", "icon"] },
+                    { name: "Daffy Duck", tags: ["looney-tunes", "animal", "classic", "male", "comedy", "sarcastic"] },
+                    { name: "Stewie Griffin", tags: ["fox", "human", "modern", "male", "comedy", "villain-ish"] },
+                    { name: "Scooby-Doo", tags: ["hanna-barbera", "animal", "classic", "male", "comedy", "mystery"] },
+                    { name: "Elsa", tags: ["disney", "human", "modern", "female", "drama", "princess"] },
+                    { name: "Dora the Explorer", tags: ["nickelodeon", "human", "modern", "female", "adventure", "kids"] },
+                    { name: "Betty Boop", tags: ["classic", "human", "female", "comedy", "jazz-age"] },
+                    { name: "Shrek", tags: ["dreamworks", "fantasy-creature", "modern", "male", "comedy"] },
+                    { name: "Winnie the Pooh", tags: ["disney", "animal", "classic", "male", "kids", "gentle"] },
+                    { name: "Bart Simpson", tags: ["fox", "human", "modern", "male", "comedy", "satire"] },
+                    { name: "Pikachu", tags: ["pokemon", "animal", "modern", "male", "kids", "icon"] },
+                    { name: "Garfield", tags: ["comic", "animal", "classic", "male", "comedy", "lazy"] },
+                    { name: "Patrick Star", tags: ["nickelodeon", "underwater", "sea-creature", "male", "comedy", "idle"] },
+                    { name: "Cartman", tags: ["comedy-central", "human", "modern", "male", "comedy", "villain-ish"] },
+                    { name: "Hello Kitty", tags: ["sanrio", "animal", "modern", "female", "cute", "kawaii"] },
+                    { name: "Moana", tags: ["disney", "human", "modern", "female", "drama", "princess"] },
+                    { name: "Bender", tags: ["fox", "robot", "modern", "male", "comedy", "satire"] },
+                ],
+                clues: [
+                    { text: "Is a classic character (pre-1990)", eliminates: (c) => c.tags.includes("classic") },
+                    { text: "Is from Disney", eliminates: (c) => c.tags.includes("disney") },
+                    { text: "Is female", eliminates: (c) => c.tags.includes("female") },
+                    { text: "Is a human or robot", eliminates: (c) => c.tags.includes("human") || c.tags.includes("robot") },
+                    { text: "Is from Fox, Comedy Central, or Dreamworks", eliminates: (c) => c.tags.includes("fox") || c.tags.includes("comedy-central") || c.tags.includes("dreamworks") },
+                    { text: "Is a land animal", eliminates: (c) => c.tags.includes("animal") },
+                    { text: "Is from Sanrio or Pokémon", eliminates: (c) => c.tags.includes("sanrio") || c.tags.includes("pokemon") },
+                    { text: "Is not optimistic or hard-working", eliminates: (c) => !c.tags.includes("optimistic") && !c.tags.includes("chef") },
+                ]
+            },
+                        // Puzzle 17: Recent Popular TV Shows - Answer: Succession
+            {
+                theme: "Recent Popular TV Shows",
+                items: [
+                    { name: "Succession", tags: ["drama", "hbo", "comedy-drama", "emmy", "family-business", "2018"] },
+                    { name: "Stranger Things", tags: ["scifi", "netflix", "horror", "emmy", "2016"] },
+                    { name: "The Last of Us", tags: ["drama", "hbo", "scifi", "emmy", "2023"] },
+                    { name: "Ted Lasso", tags: ["comedy", "apple", "sports", "emmy", "2020"] },
+                    { name: "Euphoria", tags: ["drama", "hbo", "teen", "emmy", "2019"] },
+                    { name: "The Bear", tags: ["drama", "hulu", "comedy-drama", "emmy", "2022", "kitchen"] },
+                    { name: "Wednesday", tags: ["comedy", "netflix", "horror", "2022"] },
+                    { name: "House of the Dragon", tags: ["fantasy", "hbo", "emmy", "2022"] },
+                    { name: "The Crown", tags: ["drama", "netflix", "historical", "emmy", "2016"] },
+                    { name: "Squid Game", tags: ["drama", "netflix", "foreign", "emmy", "2021"] },
+                    { name: "Ozark", tags: ["drama", "netflix", "crime", "emmy", "2017"] },
+                    { name: "Breaking Bad", tags: ["drama", "amc", "crime", "emmy", "2008"] },
+                    { name: "Game of Thrones", tags: ["fantasy", "hbo", "emmy", "2011"] },
+                    { name: "Yellowstone", tags: ["drama", "paramount", "western", "2018"] },
+                    { name: "Andor", tags: ["scifi", "disney", "starwars", "2022"] },
+                    { name: "White Lotus", tags: ["drama", "hbo", "comedy-drama", "emmy", "resort", "2021"] },
+                    { name: "Abbott Elementary", tags: ["comedy", "abc", "workplace", "emmy", "2021"] },
+                    { name: "Beef", tags: ["drama", "netflix", "comedy-drama", "emmy", "2023"] },
+                    { name: "Only Murders", tags: ["comedy", "hulu", "mystery", "emmy", "2021"] },
+                    { name: "Severance", tags: ["drama", "apple", "scifi", "emmy", "2022"] },
+                ],
+                clues: [
+                    { text: "Is on Netflix", eliminates: (c) => c.tags.includes("netflix") },
+                    { text: "Is science fiction or fantasy", eliminates: (c) => c.tags.includes("scifi") || c.tags.includes("fantasy") },
+                    { text: "Is a comedy", eliminates: (c) => c.tags.includes("comedy") },
+                    { text: "Is a crime show", eliminates: (c) => c.tags.includes("crime") },
+                    { text: "Is on Apple, Hulu, ABC, Paramount, AMC, or Disney+", eliminates: (c) => c.tags.includes("apple") || c.tags.includes("hulu") || c.tags.includes("abc") || c.tags.includes("paramount") || c.tags.includes("amc") || c.tags.includes("disney") },
+                    { text: "Is set in a resort, kitchen, or workplace", eliminates: (c) => c.tags.includes("resort") || c.tags.includes("kitchen") || c.tags.includes("workplace") },
+                    { text: "Is about teenagers or a foreign production", eliminates: (c) => c.tags.includes("teen") || c.tags.includes("foreign") },
+                    { text: "Is set in a historical period or features a western theme", eliminates: (c) => c.tags.includes("historical") || c.tags.includes("western") },
+                ]
+            },
+                        // Puzzle 18: Recent Popular Movies - Answer: Everything Everywhere All at Once
+            {
+                theme: "Recent Popular Movies",
+                items: [
+                    { name: "Everything Everywhere All at Once", tags: ["drama", "scifi", "2022", "a24", "oscar", "best-picture"] },
+                    { name: "Top Gun: Maverick", tags: ["action", "2022", "blockbuster", "sequel", "oscar"] },
+                    { name: "Oppenheimer", tags: ["drama", "2023", "historical", "oscar", "best-picture", "blockbuster"] },
+                    { name: "Barbie", tags: ["comedy", "2023", "blockbuster", "oscar"] },
+                    { name: "The Batman", tags: ["action", "2022", "superhero", "blockbuster"] },
+                    { name: "Parasite", tags: ["drama", "2019", "foreign", "oscar", "best-picture", "a24"] },
+                    { name: "Dune", tags: ["scifi", "2021", "blockbuster", "oscar"] },
+                    { name: "Knives Out", tags: ["mystery", "2019", "comedy", "sequel"] },
+                    { name: "1917", tags: ["drama", "2019", "war", "oscar"] },
+                    { name: "Joker", tags: ["drama", "2019", "superhero", "oscar"] },
+                    { name: "Avatar: The Way of Water", tags: ["scifi", "2022", "blockbuster", "sequel"] },
+                    { name: "Spider-Man: No Way Home", tags: ["action", "2021", "superhero", "blockbuster"] },
+                    { name: "The Whale", tags: ["drama", "2022", "a24", "oscar"] },
+                    { name: "Tár", tags: ["drama", "2022", "oscar"] },
+                    { name: "CODA", tags: ["drama", "2021", "oscar", "best-picture", "indie"] },
+                    { name: "Poor Things", tags: ["drama", "2023", "oscar", "a24", "fantasy"] },
+                    { name: "Midsommar", tags: ["horror", "2019", "a24", "indie"] },
+                    { name: "Hereditary", tags: ["horror", "2018", "a24", "indie"] },
+                    { name: "The Menu", tags: ["mystery", "2022", "horror", "dark-comedy"] },
+                    { name: "Whiplash", tags: ["drama", "2014", "oscar", "a24", "indie"] },
+                ],
+                clues: [
+                    { text: "Is a blockbuster", eliminates: (c) => c.tags.includes("blockbuster") },
+                    { text: "Is from 2019", eliminates: (c) => c.tags.includes("2019") },
+                    { text: "Is from 2023", eliminates: (c) => c.tags.includes("2023") },
+                    { text: "Is a horror or mystery film", eliminates: (c) => c.tags.includes("horror") || c.tags.includes("mystery") },
+                    { text: "Is from 2014, 2018, or 2021", eliminates: (c) => c.tags.includes("2014") || c.tags.includes("2018") || c.tags.includes("2021") },
+                    { text: "Did not win Best Picture", eliminates: (c) => !c.tags.includes("best-picture") },
+                    { text: "Is a sequel", eliminates: (c) => c.tags.includes("sequel") },
+                    { text: "Is not an A24 film", eliminates: (c) => !c.tags.includes("a24") },
+                ]
+            },
+                        // Puzzle 19: Cities - Answer: Istanbul
+            {
+                theme: "Cities",
+                items: [
+                    { name: "Istanbul", tags: ["turkey", "coastal", "historic", "large", "straddles-continents"] },
+                    { name: "Tokyo", tags: ["asia", "japan", "coastal", "modern", "huge"] },
+                    { name: "New York City", tags: ["americas", "usa", "coastal", "modern", "huge"] },
+                    { name: "Paris", tags: ["europe", "france", "inland", "historic", "large"] },
+                    { name: "Dubai", tags: ["asia", "uae", "coastal", "modern", "large", "skyscrapers"] },
+                    { name: "Cairo", tags: ["africa", "egypt", "inland", "historic", "huge", "ancient"] },
+                    { name: "Buenos Aires", tags: ["americas", "argentina", "coastal", "modern", "large"] },
+                    { name: "London", tags: ["europe", "uk", "inland", "historic", "huge"] },
+                    { name: "Mumbai", tags: ["asia", "india", "coastal", "modern", "huge"] },
+                    { name: "Sydney", tags: ["oceania", "australia", "coastal", "modern", "large"] },
+                    { name: "Mexico City", tags: ["americas", "mexico", "inland", "historic", "huge"] },
+                    { name: "Berlin", tags: ["europe", "germany", "inland", "historic", "large", "divided-past"] },
+                    { name: "Cape Town", tags: ["africa", "south-africa", "coastal", "modern", "large"] },
+                    { name: "Bangkok", tags: ["asia", "thailand", "inland", "modern", "large", "temples"] },
+                    { name: "Amsterdam", tags: ["europe", "netherlands", "coastal", "historic", "medium", "canals"] },
+                    { name: "Lagos", tags: ["africa", "nigeria", "coastal", "modern", "huge"] },
+                    { name: "Seoul", tags: ["asia", "korea", "inland", "modern", "huge"] },
+                    { name: "Los Angeles", tags: ["americas", "usa", "coastal", "modern", "huge"] },
+                    { name: "Rome", tags: ["europe", "italy", "inland", "historic", "large", "ancient"] },
+                    { name: "Toronto", tags: ["americas", "canada", "inland", "modern", "large"] },
+                ],
+                clues: [
+                    { text: "Is in Asia", eliminates: (c) => c.tags.includes("asia") },
+                    { text: "Is in Europe", eliminates: (c) => c.tags.includes("europe") },
+                    { text: "Is in the Americas", eliminates: (c) => c.tags.includes("americas") },
+                    { text: "Is in Africa", eliminates: (c) => c.tags.includes("africa") },
+                    { text: "Is in Oceania", eliminates: (c) => c.tags.includes("oceania") },
+                    { text: "Is primarily a modern city with no ancient history", eliminates: (c) => !c.tags.includes("historic") && c.tags.includes("modern") },
+                    { text: "Is an inland city", eliminates: (c) => c.tags.includes("inland") },
+                    { text: "Has a population over 10 million", eliminates: (c) => c.tags.includes("huge") },
+                ]
+            },
+                        // Puzzle 20: Planets & Space Objects - Answer: Europa
+            {
+                theme: "Planets & Space Objects",
+                items: [
+                    { name: "Europa", tags: ["moon", "jupiter", "icy", "ocean", "solar-system"] },
+                    { name: "Mars", tags: ["planet", "inner", "rocky", "red", "solar-system"] },
+                    { name: "The Moon", tags: ["moon", "earth", "rocky", "explored", "solar-system", "grey", "orbits-earth"] },
+                    { name: "Jupiter", tags: ["planet", "outer", "gas-giant", "large", "solar-system"] },
+                    { name: "The Sun", tags: ["star", "inner", "hot", "large", "solar-system"] },
+                    { name: "Saturn", tags: ["planet", "outer", "gas-giant", "rings", "solar-system"] },
+                    { name: "Pluto", tags: ["dwarf-planet", "outer", "rocky", "icy", "solar-system"] },
+                    { name: "Titan", tags: ["moon", "saturn", "atmosphere", "icy", "solar-system"] },
+                    { name: "Venus", tags: ["planet", "inner", "rocky", "hot", "solar-system"] },
+                    { name: "Halley's Comet", tags: ["comet", "outer", "icy", "periodic", "solar-system"] },
+                    { name: "The Milky Way", tags: ["galaxy", "outer", "huge", "contains-earth"] },
+                    { name: "Mercury", tags: ["planet", "inner", "rocky", "small", "solar-system"] },
+                    { name: "Andromeda", tags: ["galaxy", "outer", "huge", "neighbor"] },
+                    { name: "Io", tags: ["moon", "jupiter", "volcanic", "rocky", "solar-system"] },
+                    { name: "Neptune", tags: ["planet", "outer", "ice-giant", "blue", "solar-system"] },
+                    { name: "Uranus", tags: ["planet", "outer", "ice-giant", "rings", "solar-system"] },
+                    { name: "Ganymede", tags: ["moon", "jupiter", "large", "rocky", "solar-system"] },
+                    { name: "Betelgeuse", tags: ["star", "outer", "large", "red", "dying"] },
+                    { name: "Sagittarius A*", tags: ["black-hole", "outer", "huge", "milky-way"] },
+                    { name: "Ceres", tags: ["dwarf-planet", "inner", "rocky", "small", "solar-system"] },
+                ],
+                clues: [
+                    { text: "Is a planet", eliminates: (c) => c.tags.includes("planet") },
+                    { text: "Is a star", eliminates: (c) => c.tags.includes("star") },
+                    { text: "Is a galaxy", eliminates: (c) => c.tags.includes("galaxy") },
+                    { text: "Is a comet, dwarf planet, or black hole", eliminates: (c) => c.tags.includes("comet") || c.tags.includes("dwarf-planet") || c.tags.includes("black-hole") },
+                    { text: "Orbits Earth", eliminates: (c) => c.tags.includes("orbits-earth") },
+                    { text: "Is a moon of Saturn", eliminates: (c) => c.tags.includes("saturn") },
+                    { text: "Is a volcanic moon", eliminates: (c) => c.tags.includes("volcanic") },
+                    { text: "Is a large rocky moon of Jupiter", eliminates: (c) => c.tags.includes("large") && c.tags.includes("rocky") },
+                ]
+            },
+            // Puzzle 21: Toys - Answer: LEGO
+            {
+                theme: "Toys",
+                items: [
+                    { name: "LEGO", tags: ["building", "danish", "modern", "unisex", "licensed"] },
+                    { name: "Barbie", tags: ["doll", "american", "female", "classic", "mattel"] },
+                    { name: "Hot Wheels", tags: ["vehicle", "american", "classic", "male", "mattel"] },
+                    { name: "Monopoly", tags: ["boardgame", "american", "classic", "unisex", "hasbro"] },
+                    { name: "Rubik's Cube", tags: ["puzzle", "hungarian", "modern", "unisex", "brain-teaser"] },
+                    { name: "Tamagotchi", tags: ["electronic", "japanese", "modern", "unisex"] },
+                    { name: "Action Man", tags: ["doll", "british", "classic", "male", "hasbro"] },
+                    { name: "Uno", tags: ["cardgame", "american", "classic", "unisex"] },
+                    { name: "Mr. Potato Head", tags: ["creative", "american", "classic", "unisex", "hasbro"] },
+                    { name: "Furby", tags: ["electronic", "american", "modern", "unisex", "hasbro"] },
+                    { name: "Jenga", tags: ["boardgame", "tanzanian", "modern", "unisex"] },
+                    { name: "Play-Doh", tags: ["creative", "american", "classic", "unisex", "hasbro"] },
+                    { name: "Trivial Pursuit", tags: ["boardgame", "canadian", "modern", "unisex"] },
+                    { name: "Etch A Sketch", tags: ["creative", "french", "classic", "unisex"] },
+                    { name: "Nerf Gun", tags: ["outdoor", "american", "modern", "male", "hasbro"] },
+                    { name: "Stretch Armstrong", tags: ["action", "american", "classic", "male", "action-figure"] },
+                    { name: "Easy-Bake Oven", tags: ["creative", "american", "classic", "female", "hasbro"] },
+                    { name: "Polly Pocket", tags: ["doll", "british", "modern", "female"] },
+                    { name: "Yo-yo", tags: ["outdoor", "filipino", "classic", "unisex"] },
+                    { name: "Connect Four", tags: ["boardgame", "american", "classic", "unisex", "hasbro"] }
+                ],
+                clues: [
+                    { text: "Is not a board or card game", eliminates: (c) => c.tags.includes("boardgame") || c.tags.includes("cardgame") },
+                    { text: "Is not a doll", eliminates: (c) => c.tags.includes("doll") },
+                    { text: "Is not electronic", eliminates: (c) => c.tags.includes("electronic") },
+                    { text: "Is not a creative or craft toy", eliminates: (c) => c.tags.includes("creative") },
+                    { text: "Is not made by Hasbro", eliminates: (c) => c.tags.includes("hasbro") },
+                    { text: "Is not made by Mattel", eliminates: (c) => c.tags.includes("mattel") },
+                    { text: "Is not for outdoor play", eliminates: (c) => c.tags.includes("outdoor") },
+                    { text: "Is a puzzle, brain teaser, or action figure", eliminates: (c) => c.tags.includes("puzzle") || c.tags.includes("brain-teaser") || c.tags.includes("action-figure") }
+                
+                ]
+            },
+                        // Puzzle 22: Famous People of the 1960s - Answer: Neil Armstrong
+            {
+                theme: "Famous People of the 1960s",
+                items: [
+                    { name: "Neil Armstrong", tags: ["american", "male", "astronaut", "science", "deceased", "moon-landing"] },
+                    { name: "John F. Kennedy", tags: ["american", "male", "politician", "deceased", "assassinated"] },
+                    { name: "Martin Luther King Jr.", tags: ["american", "male", "activist", "deceased", "assassinated"] },
+                    { name: "Marilyn Monroe", tags: ["american", "female", "actor", "deceased"] },
+                    { name: "Muhammad Ali", tags: ["american", "male", "athlete", "deceased", "boxer"] },
+                    { name: "Che Guevara", tags: ["argentinian", "male", "activist", "deceased", "revolutionary"] },
+                    { name: "Audrey Hepburn", tags: ["british", "female", "actor", "deceased"] },
+                    { name: "Mao Zedong", tags: ["chinese", "male", "politician", "deceased"] },
+                    { name: "Yuri Gagarin", tags: ["russian", "male", "astronaut", "deceased", "soviet", "space-accident"] },
+                    { name: "Bob Dylan", tags: ["american", "male", "musician", "alive"] },
+                    { name: "Jacqueline Kennedy", tags: ["american", "female", "political-figure", "deceased"] },
+                    { name: "Malcolm X", tags: ["american", "male", "activist", "deceased", "assassinated"] },
+                    { name: "Brigitte Bardot", tags: ["french", "female", "actor", "alive"] },
+                    { name: "Nikita Khrushchev", tags: ["russian", "male", "politician", "deceased"] },
+                    { name: "Fidel Castro", tags: ["cuban", "male", "politician", "deceased"] },
+                    { name: "Grace Kelly", tags: ["american", "female", "actor", "deceased"] },
+                    { name: "Nelson Mandela", tags: ["south-african", "male", "activist", "deceased"] },
+                    { name: "Andy Warhol", tags: ["american", "male", "artist", "deceased"] },
+                    { name: "Liz Taylor", tags: ["british", "female", "actor", "deceased"] },
+                    { name: "Walter Cronkite", tags: ["american", "male", "journalist", "deceased"] },
+                ],
+                clues: [
+                    { text: "Is a politician", eliminates: (c) => c.tags.includes("politician") },
+                    { text: "Is an activist", eliminates: (c) => c.tags.includes("activist") },
+                    { text: "Is female", eliminates: (c) => c.tags.includes("female") },
+                    { text: "Is not American", eliminates: (c) => !c.tags.includes("american") },
+                    { text: "Is an actor, musician, journalist, or artist", eliminates: (c) => c.tags.includes("actor") || c.tags.includes("musician") || c.tags.includes("journalist") || c.tags.includes("artist") },
+                    { text: "Is an athlete", eliminates: (c) => c.tags.includes("athlete") },
+                    { text: "Is still alive today", eliminates: (c) => c.tags.includes("alive") },
+                    { text: "Died in a space accident or assassination", eliminates: (c) => c.tags.includes("assassinated") || c.tags.includes("space-accident") },
+                ]
+            },
+                        // Puzzle 23: Famous People of the 1980s - Answer: Michael Jackson
+            {
+                theme: "Famous People of the 1980s",
+                items: [
+                    { name: "Michael Jackson", tags: ["american", "male", "musician", "deceased", "pop", "iconic", "dancer"] },
+                    { name: "Margaret Thatcher", tags: ["british", "female", "politician", "deceased"] },
+                    { name: "Ronald Reagan", tags: ["american", "male", "politician", "deceased", "actor"] },
+                    { name: "Princess Diana", tags: ["british", "female", "royalty", "deceased"] },
+                    { name: "Mikhail Gorbachev", tags: ["russian", "male", "politician", "deceased"] },
+                    { name: "Madonna", tags: ["american", "female", "musician", "alive", "pop", "iconic"] },
+                    { name: "Michael Jordan", tags: ["american", "male", "athlete", "alive", "basketball"] },
+                    { name: "Steven Spielberg", tags: ["american", "male", "director", "alive"] },
+                    { name: "Stephen Hawking", tags: ["british", "male", "scientist", "deceased"] },
+                    { name: "Oprah Winfrey", tags: ["american", "female", "tv", "alive"] },
+                    { name: "Arnold Schwarzenegger", tags: ["austrian", "male", "actor", "alive", "politician"] },
+                    { name: "Whitney Houston", tags: ["american", "female", "musician", "deceased", "pop"] },
+                    { name: "Prince", tags: ["american", "male", "musician", "deceased", "funk"] },
+                    { name: "Janet Jackson", tags: ["american", "female", "musician", "alive", "pop"] },
+                    { name: "Eddie Murphy", tags: ["american", "male", "actor", "alive", "comedian"] },
+                    { name: "Bill Gates", tags: ["american", "male", "tech", "alive"] },
+                    { name: "Joan Collins", tags: ["british", "female", "actor", "alive"] },
+                    { name: "Yasser Arafat", tags: ["palestinian", "male", "politician", "deceased"] },
+                    { name: "Jane Fonda", tags: ["american", "female", "actor", "alive", "activist"] },
+                    { name: "Mike Tyson", tags: ["american", "male", "athlete", "alive", "boxer"] },
+                ],
+                clues: [
+                    { text: "Is British, Russian, Austrian, or Palestinian", eliminates: (c) => c.tags.includes("british") || c.tags.includes("russian") || c.tags.includes("austrian") || c.tags.includes("palestinian") },
+                    { text: "Is female", eliminates: (c) => c.tags.includes("female") },
+                    { text: "Is a politician", eliminates: (c) => c.tags.includes("politician") },
+                    { text: "Is an actor, director, or comedian", eliminates: (c) => c.tags.includes("actor") || c.tags.includes("director") || c.tags.includes("comedian") },
+                    { text: "Is an athlete", eliminates: (c) => c.tags.includes("athlete") },
+                    { text: "Is still alive", eliminates: (c) => c.tags.includes("alive") },
+                    { text: "Is known for tech or science", eliminates: (c) => c.tags.includes("tech") || c.tags.includes("scientist") },
+                    { text: "Is known for funk music", eliminates: (c) => c.tags.includes("funk") },
+                ]
+            },
+            // Puzzle 24: Famous People of the 2000s - Answer: Steve Jobs
+            {
+                theme: "Famous People of the 2000s",
+                items: [
+                    { name: "Steve Jobs", tags: ["american", "male", "tech", "deceased"] },
+                    { name: "Barack Obama", tags: ["american", "male", "politician"] },
+                    { name: "Britney Spears", tags: ["american", "female", "musician"] },
+                    { name: "George W. Bush", tags: ["american", "male", "politician"] },
+                    { name: "Paris Hilton", tags: ["american", "female", "celebrity"] },
+                    { name: "Angelina Jolie", tags: ["american", "female", "actor"] },
+                    { name: "Osama bin Laden", tags: ["saudi", "male", "terrorist", "deceased"] },
+                    { name: "Beyoncé", tags: ["american", "female", "musician"] },
+                    { name: "Tiger Woods", tags: ["american", "male", "athlete"] },
+                    { name: "J.K. Rowling", tags: ["british", "female", "author"] },
+                    { name: "Vladimir Putin", tags: ["russian", "male", "politician"] },
+                    { name: "Mark Zuckerberg", tags: ["american", "male", "tech"] },
+                    { name: "Kanye West", tags: ["american", "male", "musician"] },
+                    { name: "Oprah Winfrey", tags: ["american", "female", "tv"] },
+                    { name: "LeBron James", tags: ["american", "male", "athlete"] },
+                    { name: "Tony Blair", tags: ["british", "male", "politician"] },
+                    { name: "Nicole Kidman", tags: ["australian", "female", "actor"] },
+                    { name: "Eminem", tags: ["american", "male", "musician"] },
+                    { name: "Condoleezza Rice", tags: ["american", "female", "politician"] },
+                    { name: "David Beckham", tags: ["british", "male", "athlete"] }
+                ],
+                clues: [
+                    { text: "Is not female", eliminates: (c) => c.tags.includes("female") },
+                    { text: "Is not British", eliminates: (c) => c.tags.includes("british") },
+                    { text: "Is not a politician", eliminates: (c) => c.tags.includes("politician") },
+                    { text: "Is not a musician", eliminates: (c) => c.tags.includes("musician") },
+                    { text: "Is not an athlete", eliminates: (c) => c.tags.includes("athlete") },
+                    { text: "Is not an actor or TV personality", eliminates: (c) => c.tags.includes("actor") || c.tags.includes("tv") },
+                    { text: "Is not Russian, Saudi, or Australian", eliminates: (c) => ["russian","saudi","australian"].some(t => c.tags.includes(t)) },
+                    { text: "Is still alive today", eliminates: (c) => !c.tags.includes("deceased") },
+                
+                ]
+            },
+        ];
+        puzzles.push(...additionalPuzzles);
+
+
+        let currentPuzzleIndex = 0;
+        let celebrities = puzzles[currentPuzzleIndex].items;
+        let clues = puzzles[currentPuzzleIndex].clues;
+
+        let gameState = {
+            eliminated: new Set(),
+            gameOver: false,
+            checkedClues: new Set(),
+            revealedClues: new Set(),
+            cluesRevealed: 0,
+            puzzleSolved: false
+        };
+
+        function loadPuzzle(index) {
+            currentPuzzleIndex = index % puzzles.length;
+            celebrities = puzzles[currentPuzzleIndex].items;
+            clues = puzzles[currentPuzzleIndex].clues;
+            
+            document.getElementById('themeTitle').textContent = puzzles[currentPuzzleIndex].theme;
+        }
+
+        function initGame() {
+            loadPuzzle(currentPuzzleIndex);
+            gameState.eliminated = new Set();
+            gameState.gameOver = false;
+            gameState.checkedClues = new Set();
+            gameState.revealedClues = new Set();
+            gameState.cluesRevealed = 0;
+            gameState.puzzleSolved = false;
+            
+            renderClues();
+            renderFaces();
+            updateClueCount();
+            
+            document.getElementById('message').classList.remove('show');
+            document.getElementById('checkBtn').disabled = true;
+        }
+
+        function updateClueCount() {
+            document.getElementById('clueCount').textContent = `${gameState.cluesRevealed}/${clues.length} revealed`;
+        }
+
+        function nextPuzzle() {
+            loadPuzzle(currentPuzzleIndex + 1);
+            initGame();
+        }
+
+        function renderClues() {
+            const container = document.getElementById('cluesList');
+            container.innerHTML = clues.map((clue, index) => {
+                const isRevealed = gameState.revealedClues.has(index);
+                return `<div class="clue-item ${isRevealed ? 'flipped' : ''}" onclick="revealClue(${index})">
+                    <div class="clue-card-inner">
+                        <div class="clue-number">${index + 1}</div>
+                        <div class="clue-text">${clue.text}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function revealClue(index) {
+            if (!gameState.revealedClues.has(index)) {
+                gameState.revealedClues.add(index);
+                gameState.cluesRevealed = gameState.revealedClues.size;
+                renderClues();
+                updateClueCount();
+            }
+        }
+
+        function toggleClue(index) {
+            // Keep old function for any legacy references
+            revealClue(index);
+        }
+
+        function selectCandidate(name) {
+            if (gameState.gameOver) return;
+            
+            const remainingCount = celebrities.length - gameState.eliminated.size;
+            if (remainingCount === 1) {
+                document.getElementById('checkBtn').disabled = false;
+            }
+        }
+
+        function renderFaces() {
+            const grid = document.getElementById('facesGrid');
+            grid.innerHTML = celebrities.map((celeb, index) => {
+                const isEliminated = gameState.eliminated.has(index);
+                const isWinner = gameState.gameOver && !isEliminated && (celebrities.length - gameState.eliminated.size === 1);
+                return `
+                    <div class="face-card ${isEliminated ? 'eliminated' : ''} ${isWinner ? 'winner' : ''}"
+                         onclick="toggleElimination(${index})">
+                        <div class="face-name">${celeb.name}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleElimination(index) {
+            if (gameState.gameOver) return;
+            
+            if (gameState.eliminated.has(index)) {
+                gameState.eliminated.delete(index);
+            } else {
+                gameState.eliminated.add(index);
+            }
+            
+            renderFaces();
+            
+            const remaining = celebrities.length - gameState.eliminated.size;
+            document.getElementById('checkBtn').disabled = remaining !== 1;
+        }
+
+        function checkAnswer() {
+            if (gameState.gameOver) return;
+            
+            const remaining = celebrities.length - gameState.eliminated.size;
+            if (remaining !== 1) return;
+            
+            const playerAnswer = celebrities.find((c, i) => !gameState.eliminated.has(i));
+            
+            // Calculate the correct answer
+            // A person should be eliminated if they match ANY of the clue descriptions
+            const correctEliminated = new Set();
+            celebrities.forEach((celeb, index) => {
+                for (const clue of clues) {
+                    if (clue.eliminates(celeb)) {
+                        correctEliminated.add(index);
+                        break;
+                    }
+                }
+            });
+            
+            const correctAnswer = celebrities.find((c, i) => !correctEliminated.has(i));
+            
+            if (!correctAnswer) {
+                showMessage(`⚠️ Error: No valid answer exists with current clues!`, 'error');
+                gameState.gameOver = true;
+            } else if (playerAnswer.name === correctAnswer.name) {
+                gameState.puzzleSolved = true;
+                showMessage(`🎉 Correct! ${correctAnswer.name} fits ALL the clues!`, 'success');
+                gameState.gameOver = true;
+                launchConfetti();
+            } else {
+                // Wrong answer - mark it as wrong but don't end the game
+                showMessage(`❌ Wrong! ${playerAnswer.name} doesn't fit all the clues. Keep trying!`, 'error');
+                // Don't set gameOver to true - let them keep playing
+                document.getElementById('checkBtn').disabled = true;
+            }
+            
+            renderFaces();
+        }
+
+        function launchConfetti() {
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#ff1493'];
+            const confettiCount = 100;
+            
+            for (let i = 0; i < confettiCount; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.style.position = 'fixed';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.top = '-10px';
+                    confetti.style.width = '10px';
+                    confetti.style.height = '10px';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.opacity = '1';
+                    confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                    confetti.style.animation = `confetti-fall ${2 + Math.random() * 2}s linear forwards`;
+                    confetti.style.zIndex = '9999';
+                    
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => confetti.remove(), 4000);
+                }, i * 30);
+            }
+        }
+
+        function revealAnswer() {
+            // Calculate the correct answer
+            // A person should be eliminated if they match ANY of the clue descriptions
+            const correctEliminated = new Set();
+            celebrities.forEach((celeb, index) => {
+                for (const clue of clues) {
+                    if (clue.eliminates(celeb)) {
+                        correctEliminated.add(index);
+                        break;
+                    }
+                }
+            });
+            
+            const correctAnswer = celebrities.find((c, i) => !correctEliminated.has(i));
+            
+            gameState.eliminated = correctEliminated;
+            gameState.gameOver = true;
+            
+            if (correctAnswer) {
+                showMessage(`💡 The answer is ${correctAnswer.name}!`, 'success');
+            } else {
+                showMessage(`⚠️ Error: No valid answer exists with current clues!`, 'error');
+            }
+            
+            renderFaces();
+            document.getElementById('checkBtn').disabled = true;
+        }
+
+        function showMessage(text, type) {
+            const message = document.getElementById('message');
+            message.textContent = text;
+            message.className = `message ${type} show`;
+        }
+
+        document.getElementById('checkBtn').onclick = checkAnswer;
+        document.getElementById('nextBtn').onclick = nextPuzzle;
+        document.getElementById('revealBtn').onclick = revealAnswer;
+        document.getElementById('resetBtn').onclick = initGame;
+        
+        document.getElementById('helpBtn').onclick = () => {
+            document.getElementById('helpModal').classList.add('show');
+        };
+        
+        document.getElementById('closeHelp').onclick = () => {
+            document.getElementById('helpModal').classList.remove('show');
+        };
+        
+        document.getElementById('helpModal').onclick = (e) => {
+            if (e.target.id === 'helpModal') {
+                document.getElementById('helpModal').classList.remove('show');
+            }
+        };
+        
+        document.getElementById('shareBtn').onclick = () => {
+            const puzzleName = puzzles[currentPuzzleIndex].theme;
+            const totalClues = clues.length;
+            
+            let shareText;
+            if (gameState.puzzleSolved) {
+                shareText = `I solved "${puzzleName}" on GUESS WHAT! 🎯\nClues used: ${gameState.cluesRevealed}/${totalClues}\nCan you beat my score?`;
+            } else {
+                shareText = `Can you solve "${puzzleName}" on GUESS WHAT? 🎯`;
+            }
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'GUESS WHAT?',
+                    text: shareText,
+                    url: window.location.href
+                }).catch(() => {
+                    copyToClipboard(shareText + '\n' + window.location.href);
+                });
+            } else {
+                copyToClipboard(shareText + '\n' + window.location.href);
+            }
+        };
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showMessage('📋 Link copied to clipboard!', 'success');
+            }).catch(() => {
+                showMessage('❌ Could not copy to clipboard', 'error');
+            });
+        }
+
+        initGame();
+    
+    </script>
+</body>
+</html>

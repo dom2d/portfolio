@@ -1,0 +1,1738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Werewolf Daily - Deduction Puzzle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;800&family=Space+Mono:wght@400;700&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #1a1a1a;
+            --bg-card-hover: #252525;
+            --border: #3a3a3a;
+            --text: #e8e8e8;
+            --text-dim: #909090;
+            --accent: #c0c0c0;
+            --accent-glow: rgba(192, 192, 192, 0.3);
+            --villager: #b8b8b8;
+            --werewolf: #666666;
+            --werewolf-glow: rgba(100, 100, 100, 0.3);
+            --success: #a0a0a0;
+            --warning: #888888;
+            --silver: #888888;
+            --gold: #b0b0b0;
+        }
+
+        body {
+            background: #000000;
+            color: var(--text);
+            font-family: 'Crimson Pro', serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem 1rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                radial-gradient(1px 1px at 10% 20%, white, transparent),
+                radial-gradient(1px 1px at 15% 35%, white, transparent),
+                radial-gradient(2px 2px at 20% 50%, white, transparent),
+                radial-gradient(1px 1px at 25% 15%, white, transparent),
+                radial-gradient(1px 1px at 30% 70%, white, transparent),
+                radial-gradient(2px 2px at 35% 40%, white, transparent),
+                radial-gradient(1px 1px at 40% 85%, white, transparent),
+                radial-gradient(1px 1px at 45% 10%, white, transparent),
+                radial-gradient(2px 2px at 50% 60%, white, transparent),
+                radial-gradient(1px 1px at 55% 25%, white, transparent),
+                radial-gradient(1px 1px at 60% 75%, white, transparent),
+                radial-gradient(2px 2px at 65% 45%, white, transparent),
+                radial-gradient(1px 1px at 70% 90%, white, transparent),
+                radial-gradient(1px 1px at 75% 5%, white, transparent),
+                radial-gradient(2px 2px at 80% 55%, white, transparent),
+                radial-gradient(1px 1px at 85% 30%, white, transparent),
+                radial-gradient(1px 1px at 90% 80%, white, transparent),
+                radial-gradient(1px 1px at 95% 65%, white, transparent),
+                radial-gradient(1px 1px at 5% 45%, white, transparent),
+                radial-gradient(2px 2px at 12% 82%, white, transparent),
+                radial-gradient(1px 1px at 18% 8%, white, transparent),
+                radial-gradient(1px 1px at 22% 95%, white, transparent),
+                radial-gradient(2px 2px at 28% 28%, white, transparent),
+                radial-gradient(1px 1px at 32% 62%, white, transparent),
+                radial-gradient(1px 1px at 38% 12%, white, transparent),
+                radial-gradient(2px 2px at 42% 78%, white, transparent),
+                radial-gradient(1px 1px at 48% 42%, white, transparent),
+                radial-gradient(1px 1px at 52% 88%, white, transparent),
+                radial-gradient(2px 2px at 58% 18%, white, transparent),
+                radial-gradient(1px 1px at 62% 52%, white, transparent),
+                radial-gradient(1px 1px at 68% 72%, white, transparent),
+                radial-gradient(2px 2px at 72% 38%, white, transparent),
+                radial-gradient(1px 1px at 78% 92%, white, transparent),
+                radial-gradient(1px 1px at 82% 22%, white, transparent),
+                radial-gradient(2px 2px at 88% 68%, white, transparent),
+                radial-gradient(1px 1px at 92% 48%, white, transparent),
+                radial-gradient(1px 1px at 3% 58%, white, transparent),
+                radial-gradient(2px 2px at 8% 88%, white, transparent),
+                radial-gradient(1px 1px at 13% 32%, white, transparent),
+                radial-gradient(1px 1px at 17% 98%, white, transparent),
+                radial-gradient(2px 2px at 23% 4%, white, transparent),
+                radial-gradient(1px 1px at 27% 66%, white, transparent),
+                radial-gradient(1px 1px at 33% 22%, white, transparent),
+                radial-gradient(2px 2px at 37% 86%, white, transparent),
+                radial-gradient(1px 1px at 43% 48%, white, transparent),
+                radial-gradient(1px 1px at 47% 14%, white, transparent),
+                radial-gradient(2px 2px at 53% 76%, white, transparent),
+                radial-gradient(1px 1px at 57% 36%, white, transparent),
+                radial-gradient(1px 1px at 63% 94%, white, transparent),
+                radial-gradient(2px 2px at 67% 58%, white, transparent),
+                radial-gradient(1px 1px at 73% 8%, white, transparent),
+                radial-gradient(1px 1px at 77% 44%, white, transparent),
+                radial-gradient(2px 2px at 83% 84%, white, transparent),
+                radial-gradient(1px 1px at 87% 24%, white, transparent),
+                radial-gradient(1px 1px at 93% 74%, white, transparent),
+                radial-gradient(1px 1px at 97% 54%, white, transparent),
+                radial-gradient(1px 1px at 6% 16%, white, transparent),
+                radial-gradient(2px 2px at 11% 96%, white, transparent),
+                radial-gradient(1px 1px at 16% 56%, white, transparent),
+                radial-gradient(1px 1px at 21% 26%, white, transparent),
+                radial-gradient(2px 2px at 26% 92%, white, transparent),
+                radial-gradient(1px 1px at 31% 38%, white, transparent),
+                radial-gradient(1px 1px at 36% 68%, white, transparent),
+                radial-gradient(2px 2px at 41% 2%, white, transparent),
+                radial-gradient(1px 1px at 46% 82%, white, transparent),
+                radial-gradient(1px 1px at 51% 46%, white, transparent),
+                radial-gradient(2px 2px at 56% 12%, white, transparent),
+                radial-gradient(1px 1px at 61% 78%, white, transparent),
+                radial-gradient(1px 1px at 66% 34%, white, transparent),
+                radial-gradient(2px 2px at 71% 96%, white, transparent),
+                radial-gradient(1px 1px at 76% 62%, white, transparent),
+                radial-gradient(1px 1px at 81% 18%, white, transparent),
+                radial-gradient(2px 2px at 86% 88%, white, transparent),
+                radial-gradient(1px 1px at 91% 52%, white, transparent),
+                radial-gradient(1px 1px at 96% 28%, white, transparent),
+                radial-gradient(1px 1px at 4% 72%, white, transparent),
+                radial-gradient(2px 2px at 9% 42%, white, transparent),
+                radial-gradient(1px 1px at 14% 6%, white, transparent);
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.8;
+        }
+
+        body > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        body::after {
+            content: '';
+                radial-gradient(1px 1px at 72% 30%, white, transparent),
+                radial-gradient(1px 1px at 48% 55%, white, transparent),
+                radial-gradient(2px 2px at 90% 15%, white, transparent),
+                radial-gradient(1px 1px at 35% 75%, white, transparent),
+                radial-gradient(2px 2px at 65% 85%, white, transparent),
+                radial-gradient(1px 1px at 20% 45%, white, transparent),
+                radial-gradient(1px 1px at 85% 65%, white, transparent),
+                radial-gradient(2px 2px at 55% 25%, white, transparent),
+                radial-gradient(1px 1px at 15% 85%, white, transparent),
+                radial-gradient(1px 1px at 42% 10%, white, transparent),
+                radial-gradient(2px 2px at 78% 50%, white, transparent),
+                radial-gradient(1px 1px at 30% 35%, white, transparent),
+                radial-gradient(1px 1px at 95% 40%, white, transparent),
+                radial-gradient(1px 1px at 5% 60%, white, transparent),
+                radial-gradient(2px 2px at 60% 70%, white, transparent),
+                radial-gradient(1px 1px at 25% 15%, white, transparent),
+                radial-gradient(1px 1px at 80% 90%, white, transparent),
+                radial-gradient(1px 1px at 50% 40%, white, transparent),
+                radial-gradient(2px 2px at 12% 65%, white, transparent),
+                radial-gradient(1px 1px at 88% 25%, white, transparent),
+                radial-gradient(1px 1px at 38% 80%, white, transparent),
+                radial-gradient(1px 1px at 70% 10%, white, transparent),
+                radial-gradient(2px 2px at 22% 90%, white, transparent),
+                radial-gradient(1px 1px at 62% 45%, white, transparent),
+                radial-gradient(1px 1px at 45% 60%, white, transparent),
+                radial-gradient(1px 1px at 8% 35%, white, transparent),
+                radial-gradient(2px 2px at 92% 75%, white, transparent),
+                radial-gradient(1px 1px at 52% 20%, white, transparent),
+                radial-gradient(1px 1px at 18% 50%, white, transparent);
+            background-size: 100% 100%;
+            background-position: 0% 0%;
+            opacity: 0.8;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            animation: fadeInDown 0.8s ease-out;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 3.2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.3rem;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--silver) 50%, var(--gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+        }
+
+        .subtitle {
+            font-family: 'IM Fell English SC', serif;
+            font-size: 1rem;
+            color: var(--text-dim);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .puzzle-info {
+            background: transparent;
+            border: none;
+            padding: 0.75rem;
+            margin-bottom: 1.5rem;
+            max-width: 550px;
+            width: 100%;
+            animation: fadeIn 0.8s ease-out 0.2s both;
+        }
+
+        .rule-badge {
+            display: inline-block;
+            background: transparent;
+            border: 1px solid rgba(160, 160, 160, 0.3);
+            color: var(--text-dim);
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            font-family: 'IM Fell English SC', serif;
+            font-size: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-weight: 400;
+            opacity: 0.6;
+        }
+
+        .rule-text {
+            font-size: 1rem;
+            line-height: 1.5;
+            color: var(--text-dim);
+            opacity: 0.6;
+            margin-bottom: 0.5rem;
+        }
+
+        .grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            max-width: 550px;
+            width: 100%;
+            margin-bottom: 1.5rem;
+        }
+
+        .character-card {
+            background: var(--bg-card);
+            border: none;
+            border-radius: 0;
+            padding: 0.6rem 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: visible;
+            animation: fadeInUp 0.6s ease-out both;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .character-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .character-portrait {
+            font-size: 2.5rem;
+            line-height: 1;
+            flex-shrink: 0;
+            margin-top: 0.25rem;
+            width: 2.5rem;
+            height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .character-portrait img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 50%;
+        }
+
+        .character-text-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .character-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px var(--accent-glow);
+        }
+
+        .character-card.selected-villager {
+            background: rgba(200, 200, 200, 0.25);
+        }
+
+        .character-card.selected-werewolf {
+            background: rgba(220, 38, 38, 0.25);
+        }
+
+        .character-card.revealed-villager {
+            background: rgba(212, 175, 55, 0.12);
+        }
+
+        .character-card.revealed-werewolf {
+            background: rgba(220, 38, 38, 0.15);
+        }
+
+        .character-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .gender-marker {
+            font-size: 1.3rem;
+            opacity: 1;
+            font-weight: 700;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+        }
+
+        .gender-male {
+            color: #5ab4ff;
+        }
+
+        .gender-female {
+            color: #ff8bc0;
+        }
+
+        .gender-nb {
+            color: #c084fc;
+        }
+
+        .character-role {
+            font-family: 'IM Fell English SC', serif;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            position: relative;
+            cursor: help;
+            display: inline-block;
+        }
+
+        .role-ability {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-style: italic;
+            opacity: 0;
+            z-index: 100;
+            min-width: 250px;
+            max-width: 350px;
+            white-space: normal;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .character-role:hover .role-ability {
+            display: block;
+            opacity: 1;
+        }
+
+        .dead-character {
+            opacity: 0.9;
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(26, 26, 26, 1) 100%);
+        }
+
+        .dead-note {
+            background: rgba(212, 175, 55, 0.15);
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 0.4rem 0.6rem;
+            border-radius: 4px;
+            font-family: 'IM Fell English SC', serif;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: block;
+            font-weight: 400;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .dead-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 90px;
+            padding: 0.5rem;
+        }
+
+        .dead-note-text {
+            font-family: 'IM Fell English', serif;
+            font-size: 0.75rem;
+            color: var(--gold);
+            text-align: center;
+            line-height: 1.3;
+            opacity: 0.9;
+        }
+
+        .character-statement {
+            font-size: 1.1rem;
+            line-height: 1.5;
+            color: #3a3a3a;
+            background: white;
+            border-radius: 12px;
+            padding: 0.65rem 0.85rem;
+            margin-bottom: 0;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .character-statement::before {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 15px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid white;
+        }
+
+        .selection-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            position: relative;
+            z-index: 10;
+            min-width: 90px;
+        }
+
+        .btn {
+            padding: 0.6rem 0.85rem;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text);
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'IM Fell English SC', serif;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.15s;
+            font-weight: 700;
+            position: relative;
+            pointer-events: auto;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-villager {
+            border-color: #808080;
+            background: #808080;
+            color: #0d0d0d;
+        }
+
+        .btn-villager:hover {
+            background: #909090;
+            border-color: #909090;
+        }
+
+        .btn-villager.active {
+            background: #808080;
+            border-color: #ffffff;
+            animation: buttonFlash 0.3s ease-out;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8);
+        }
+
+        .btn-werewolf {
+            border-color: #000000;
+            background: #000000;
+            color: #ffffff;
+        }
+
+        .btn-werewolf:hover {
+            background: #1a1a1a;
+            border-color: #1a1a1a;
+        }
+
+        .btn-werewolf.active {
+            background: #000000;
+            border-color: #a0a0a0;
+            color: #ffffff;
+            animation: buttonFlash 0.3s ease-out;
+            box-shadow: 0 0 0 3px rgba(160, 160, 160, 0.8);
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            animation: fadeIn 0.8s ease-out 0.4s both;
+        }
+
+        .submit-btn {
+            padding: 1rem 2.5rem;
+            background: linear-gradient(135deg, var(--gold) 0%, #b8941e 100%);
+            color: #0d0d0d;
+            border: none;
+            border-radius: 8px;
+            font-family: 'IM Fell English SC', serif;
+            font-size: 1rem;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--accent-glow);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .reset-btn {
+            padding: 1rem 2rem;
+            background: transparent;
+            color: var(--text-dim);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'IM Fell English SC', serif;
+            font-size: 1rem;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .reset-btn:hover {
+            border-color: var(--text);
+            color: var(--text);
+        }
+
+        .debug-btn {
+            padding: 1rem 2rem;
+            background: transparent;
+            color: #9b59b6;
+            border: 1px solid #9b59b6;
+            border-radius: 8px;
+            font-family: 'IM Fell English SC', serif;
+            font-size: 0.85rem;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            opacity: 0.7;
+        }
+
+        .debug-btn:hover {
+            opacity: 1;
+            background: rgba(155, 89, 182, 0.1);
+        }
+
+        .reveal-btn {
+            padding: 1rem 2.5rem;
+            background: linear-gradient(135deg, var(--silver) 0%, #a8a8a8 100%);
+            color: #0d0d0d;
+            border: none;
+            border-radius: 8px;
+            font-family: 'IM Fell English SC', serif;
+            font-size: 1rem;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(192, 192, 192, 0.3);
+        }
+
+        .reveal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(192, 192, 192, 0.4);
+        }
+
+        .result {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        .result.success {
+            background: rgba(212, 175, 55, 0.15);
+            border: 2px solid var(--gold);
+            color: var(--gold);
+        }
+
+        .result.failure {
+            background: rgba(192, 192, 192, 0.15);
+            border: 2px solid var(--silver);
+            color: var(--silver);
+        }
+
+        .stats {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            font-family: 'IM Fell English', serif;
+            font-size: 1.05rem;
+            color: var(--text-dim);
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .icon {
+            width: 24px;
+            height: 24px;
+            display: inline-block;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes buttonFlash {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 currentColor;
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 0 20px 5px currentColor;
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 currentColor;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .grid > .character-card:nth-child(1) { animation-delay: 0.1s; }
+        .grid > .character-card:nth-child(2) { animation-delay: 0.15s; }
+        .grid > .character-card:nth-child(3) { animation-delay: 0.2s; }
+        .grid > .character-card:nth-child(4) { animation-delay: 0.25s; }
+        .grid > .character-card:nth-child(5) { animation-delay: 0.3s; }
+        .grid > .character-card:nth-child(6) { animation-delay: 0.35s; }
+        .grid > .character-card:nth-child(7) { animation-delay: 0.4s; }
+        .grid > .character-card:nth-child(8) { animation-delay: 0.45s; }
+        .grid > .character-card:nth-child(9) { animation-delay: 0.5s; }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="werewolf_logo_transp.png" alt="Werewolf Nightly" class="logo" style="max-width: 600px; width: 90%; height: auto; margin: 0 auto 1rem; display: block;">
+        <p class="subtitle" style="display: none;">Daily Deduction Puzzle</p>
+        
+        <!-- Debug buttons in top right -->
+        <div style="position: absolute; top: 0.5rem; right: 0.5rem; display: flex; gap: 0.5rem;">
+            <button class="debug-btn" id="debugNextBtn" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">Next</button>
+            <button class="debug-btn" onclick="document.getElementById('csvImportFile').click()" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: #606060;">Load</button>
+            <input type="file" id="csvImportFile" accept=".csv" style="display:none" onchange="importCustomPuzzle(event)">
+        </div>
+    </header>
+
+    <div class="puzzle-info">
+        <p class="rule-text" id="ruleText">Identify the werewolves, before they kill more villagers! Werewolves always lie. Villagers always tell the truth.</p>
+        <div class="stats">
+            <div class="stat">
+                <span>🌙 Werewolves:</span>
+                <strong id="werewolfCount">2</strong>
+            </div>
+            <div class="stat">
+                <span>👥 Villagers:</span>
+                <strong id="villagerCount">7</strong>
+            </div>
+            <div class="stat">
+                <span id="puzzleNumber">Puzzle 1</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="controls">
+        <button class="submit-btn" id="submitBtn">Check</button>
+        <button class="reset-btn" id="resetBtn">Reset</button>
+    </div>
+
+    <div id="resultArea"></div>
+    
+    <div class="controls" id="revealControls" style="display: none;">
+        <button class="reveal-btn" id="revealBtn">Reveal Solution</button>
+    </div>
+
+    <script>
+        // Daily puzzle configuration (in a real app, this would come from a server based on date)
+        const allPuzzles = [
+            // Puzzle 1
+            {
+                date: new Date().toDateString(),
+                rule: "Identify the werewolves, before they kill more villagers! Werewolves always lie. Villagers always tell the truth.",
+                werewolfCount: 2,
+                characters: [
+                    {
+                        name: "Albert",
+                        role: "Matchmaker",
+                        gender: "M",
+                        roleAbility: "Knows if werewolves are adjacent neighbors or not",
+                        statement: "Werewolves are adjacent!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Benny",
+                        role: "Journalist",
+                        gender: "M",
+                        roleAbility: "Knows a letter in all werewolves' names (or that there is none)",
+                        statement: "Werewolves share 2 letters!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Claudia",
+                        role: "Gossiper",
+                        gender: "F",
+                        roleAbility: "Knows the exact gender count of werewolves",
+                        statement: "Werewolves are men!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Donnatella",
+                        role: "Watcher",
+                        gender: "F",
+                        roleAbility: "Knows if their neighbors are lying or not",
+                        statement: "None of my neighbors are lying!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Edgar",
+                        role: "Dead body",
+                        gender: "M",
+                        roleAbility: "DEAD - Left a note with a true clue",
+                        statement: "All werewolves are the same gender.",
+                        isWerewolf: false,
+                        isDead: true
+                    },
+                    {
+                        name: "Frederic",
+                        role: "Watcher",
+                        gender: "M",
+                        roleAbility: "Knows if their neighbors are lying or not",
+                        statement: "None of my neighbors are lying!",
+                        isWerewolf: true,
+                        isDead: false
+                    },
+                    {
+                        name: "Gilles",
+                        role: "Gossiper",
+                        gender: "M",
+                        roleAbility: "Knows the exact gender count of werewolves",
+                        statement: "No man is lying!",
+                        isWerewolf: true,
+                        isDead: false
+                    },
+                    {
+                        name: "Henrietta",
+                        role: "Watcher",
+                        gender: "F",
+                        roleAbility: "Knows if their neighbors are lying or not",
+                        statement: "One of my neighbors is lying!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "India",
+                        role: "Gossiper",
+                        gender: "F",
+                        roleAbility: "Knows the exact gender count of werewolves",
+                        statement: "No woman is lying!",
+                        isWerewolf: false,
+                        isDead: false
+                    }
+                ]
+            },
+            // Puzzle 2
+            {
+                date: new Date().toDateString(),
+                rule: "Identify the werewolves, before they kill more villagers! Werewolves always lie. Villagers always tell the truth.",
+                werewolfCount: 2,
+                characters: [
+                    {
+                        name: "Allison",
+                        role: "Theorist",
+                        gender: "F",
+                        roleAbility: "Makes a group guess about werewolves",
+                        statement: "Of Barbara, Carla and me, there's gotta be a werewolf.",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Barbara",
+                        role: "Matchmaker",
+                        gender: "F",
+                        roleAbility: "Knows if werewolves are surrounded by specific genders",
+                        statement: "Werewolves are surrounded by women!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Carla",
+                        role: "Hunter",
+                        gender: "F",
+                        roleAbility: "Has a specific target in mind",
+                        statement: "I will shoot that manly werewolf!",
+                        isWerewolf: true,
+                        isDead: false
+                    },
+                    {
+                        name: "Donnatella",
+                        role: "Dog",
+                        gender: "F",
+                        roleAbility: "Barks if at least one werewolf is adjacent",
+                        statement: "BARK! (Danger around me!)",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Erica",
+                        role: "Matchmaker",
+                        gender: "F",
+                        roleAbility: "Knows if werewolves are adjacent neighbors or not",
+                        statement: "Werewolves are adjacent!",
+                        isWerewolf: true,
+                        isDead: false
+                    },
+                    {
+                        name: "Francine",
+                        role: "Passerby",
+                        gender: "F",
+                        roleAbility: "Says something obvious",
+                        statement: "There's a man next to me! aaah!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Galileo",
+                        role: "Mayor",
+                        gender: "M",
+                        roleAbility: "Never lies (unless a werewolf of course)",
+                        statement: "I'm 100% sure i'm not lying!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Henrietta",
+                        role: "Passerby",
+                        gender: "F",
+                        roleAbility: "Says something obvious",
+                        statement: "There's a dead body next to me! aaah!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Ingrid",
+                        role: "Dead body",
+                        gender: "F",
+                        roleAbility: "DEAD - Left a note with a true clue",
+                        statement: "at least one werewolf name ends in A",
+                        isWerewolf: false,
+                        isDead: true
+                    }
+                ]
+            },
+            // Puzzle 3 - NEW!
+            {
+                date: new Date().toDateString(),
+                rule: "Identify the werewolves, before they kill more villagers! Werewolves always lie. Villagers always tell the truth.",
+                werewolfCount: 3,
+                characters: [
+                    {
+                        name: "Adrian",
+                        role: "Oracle",
+                        gender: "M",
+                        roleAbility: "Knows how many of their neighbors are werewolves",
+                        statement: "One of my neighbors is a werewolf.",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Beatrice",
+                        role: "Gossiper",
+                        gender: "F",
+                        roleAbility: "Knows the exact gender count of werewolves",
+                        statement: "All werewolves are female.",
+                        isWerewolf: true,
+                        isDead: false
+                    },
+                    {
+                        name: "Carlos",
+                        role: "Theorist",
+                        gender: "M",
+                        roleAbility: "Makes a group guess about werewolves",
+                        statement: "At least one of Beatrice, Diana, or Elena is a werewolf.",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Diana",
+                        role: "Watcher",
+                        gender: "F",
+                        roleAbility: "Knows if their neighbors are lying or not",
+                        statement: "One of my neighbors is lying.",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Elena",
+                        role: "Matchmaker",
+                        gender: "F",
+                        roleAbility: "Knows if werewolves are adjacent neighbors or not",
+                        statement: "The werewolves are all adjacent to each other.",
+                        isWerewolf: true,
+                        isDead: false
+                    },
+                    {
+                        name: "Frank",
+                        role: "Dead body",
+                        gender: "M",
+                        roleAbility: "DEAD - Left a note with a true clue",
+                        statement: "Not all werewolves are the same gender.",
+                        isWerewolf: false,
+                        isDead: true
+                    },
+                    {
+                        name: "Gloria",
+                        role: "Journalist",
+                        gender: "F",
+                        roleAbility: "Knows a letter in all werewolves' names (or that there is none)",
+                        statement: "All werewolf names contain the letter E.",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Henry",
+                        role: "Mayor",
+                        gender: "M",
+                        roleAbility: "Never lies (unless a werewolf of course)",
+                        statement: "I am innocent, I swear!",
+                        isWerewolf: true,
+                        isDead: false
+                    },
+                    {
+                        name: "Iris",
+                        role: "Dog",
+                        gender: "F",
+                        roleAbility: "Barks if at least one werewolf is adjacent",
+                        statement: "BARK! Danger nearby!",
+                        isWerewolf: false,
+                        isDead: false
+                    }
+                ]
+            },
+            // Puzzle 4: "The Midnight Masquerade"
+            {
+                date: new Date().toDateString(),
+                rule: "Identify the werewolves, before they kill more villagers! Werewolves always lie. Villagers always tell the truth.",
+                werewolfCount: 2,
+                characters: [
+                    {
+                        name: "Arthur",
+                        role: "Mayor",
+                        gender: "M",
+                        roleAbility: "Never lies (unless a werewolf of course)",
+                        statement: "On my honor, at least one woman is a werewolf!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Beatrix",
+                        role: "Oracle",
+                        gender: "F",
+                        roleAbility: "Knows how many of their neighbors are werewolves",
+                        statement: "One of my neighbors is dangerous!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Chester",
+                        role: "Gossiper",
+                        gender: "M",
+                        roleAbility: "Knows the exact gender count of werewolves",
+                        statement: "All the werewolves are men!",
+                        isWerewolf: true,
+                        isDead: false
+                    },
+                    {
+                        name: "Delilah",
+                        role: "Dog",
+                        gender: "F",
+                        roleAbility: "Barks if at least one werewolf is adjacent",
+                        statement: "Grrrr... no danger here!",
+                        isWerewolf: true,
+                        isDead: false
+                    },
+                    {
+                        name: "Edmund",
+                        role: "Matchmaker",
+                        gender: "M",
+                        roleAbility: "Knows if werewolves are adjacent neighbors or not",
+                        statement: "The werewolves are not next to each other!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Florence",
+                        role: "Dead body",
+                        gender: "F",
+                        roleAbility: "DEAD - Left a note with a true clue",
+                        statement: "The werewolf beside me ended my life.",
+                        isWerewolf: false,
+                        isDead: true
+                    },
+                    {
+                        name: "Gerard",
+                        role: "Watcher",
+                        gender: "M",
+                        roleAbility: "Knows if their neighbors are lying or not",
+                        statement: "My neighbors are both honest!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Hazel",
+                        role: "Theorist",
+                        gender: "F",
+                        roleAbility: "Makes a group guess about werewolves",
+                        statement: "Between Beatrix, Chester, and Edmund, there is 1 werewolf!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Isaac",
+                        role: "Journalist",
+                        gender: "M",
+                        roleAbility: "Knows a letter in all werewolves' names (or that there is none)",
+                        statement: "Every werewolf has an E in their name!",
+                        isWerewolf: false,
+                        isDead: false
+                    }
+                ]
+            },
+            // Puzzle 5: "The Foggy Harbor"
+            {
+                date: new Date().toDateString(),
+                rule: "Identify the werewolves, before they kill more villagers! Werewolves always lie. Villagers always tell the truth.",
+                werewolfCount: 2,
+                characters: [
+                    {
+                        name: "Adrian",
+                        role: "Theorist",
+                        gender: "M",
+                        roleAbility: "Makes a group guess about werewolves",
+                        statement: "Between Bella, Carlos, and Diana, there is 1 werewolf!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Bella",
+                        role: "Mayor",
+                        gender: "F",
+                        roleAbility: "Never lies (unless a werewolf of course)",
+                        statement: "I give you my word, I'm not dangerous!",
+                        isWerewolf: true,
+                        isDead: false
+                    },
+                    {
+                        name: "Carlos",
+                        role: "Watcher",
+                        gender: "M",
+                        roleAbility: "Knows if their neighbors are lying or not",
+                        statement: "One of my neighbors is lying!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Diana",
+                        role: "Dog",
+                        gender: "F",
+                        roleAbility: "Barks if at least one werewolf is adjacent",
+                        statement: "BARK! Danger nearby!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Ethan",
+                        role: "Gossiper",
+                        gender: "M",
+                        roleAbility: "Knows the exact gender count of werewolves",
+                        statement: "The werewolves are all women!",
+                        isWerewolf: true,
+                        isDead: false
+                    },
+                    {
+                        name: "Frank",
+                        role: "Dead body",
+                        gender: "M",
+                        roleAbility: "DEAD - Left a note with a true clue",
+                        statement: "A werewolf with an E in their name killed me.",
+                        isWerewolf: false,
+                        isDead: true
+                    },
+                    {
+                        name: "Grace",
+                        role: "Investigator",
+                        gender: "F",
+                        roleAbility: "Knows the role of one werewolf",
+                        statement: "One werewolf is a Mayor!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Hugo",
+                        role: "Matchmaker",
+                        gender: "M",
+                        roleAbility: "Knows if werewolves are adjacent neighbors or not",
+                        statement: "The werewolves are next to each other!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Iris",
+                        role: "Journalist",
+                        gender: "F",
+                        roleAbility: "Knows a letter in all werewolves' names (or that there is none)",
+                        statement: "All werewolves have an A in their name!",
+                        isWerewolf: false,
+                        isDead: false
+                    }
+                ]
+            },
+            // Puzzle 6: "The Cursed Carnival"
+            {
+                date: new Date().toDateString(),
+                rule: "Identify the werewolves, before they kill more villagers! Werewolves always lie. Villagers always tell the truth.",
+                werewolfCount: 2,
+                characters: [
+                    {
+                        name: "Alice",
+                        role: "Oracle",
+                        gender: "F",
+                        roleAbility: "Knows how many of their neighbors are werewolves",
+                        statement: "My neighbor is safe!",
+                        isWerewolf: true,
+                        isDead: false
+                    },
+                    {
+                        name: "Betty",
+                        role: "Watcher",
+                        gender: "F",
+                        roleAbility: "Knows if their neighbors are lying or not",
+                        statement: "One of my neighbors is lying!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Colin",
+                        role: "Tarot Reader",
+                        gender: "M",
+                        roleAbility: "Knows a letter in a werewolf's name",
+                        statement: "I see the letter I in a werewolf's name!",
+                        isWerewolf: true,
+                        isDead: false
+                    },
+                    {
+                        name: "Diana",
+                        role: "Gossiper",
+                        gender: "F",
+                        roleAbility: "Knows the exact gender count of werewolves",
+                        statement: "One man and one woman are werewolves!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Edgar",
+                        role: "Coward",
+                        gender: "M",
+                        roleAbility: "Never next to a werewolf (unless they're a werewolf themselves)",
+                        statement: "I'm never near danger!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Felix",
+                        role: "Dead body",
+                        gender: "M",
+                        roleAbility: "DEAD - Left a note with a true clue",
+                        statement: "A werewolf with an I in their name killed me.",
+                        isWerewolf: false,
+                        isDead: true
+                    },
+                    {
+                        name: "Gina",
+                        role: "Dog",
+                        gender: "F",
+                        roleAbility: "Barks if at least one werewolf is adjacent",
+                        statement: "Growl! All safe around me!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Hugo",
+                        role: "Theorist",
+                        gender: "M",
+                        roleAbility: "Makes a group guess about werewolves",
+                        statement: "Between Alice, Betty, and Colin, there are 2 werewolves!",
+                        isWerewolf: false,
+                        isDead: false
+                    },
+                    {
+                        name: "Iris",
+                        role: "Journalist",
+                        gender: "F",
+                        roleAbility: "Knows a letter in all werewolves' names (or that there is none)",
+                        statement: "All werewolves have an I in their name!",
+                        isWerewolf: false,
+                        isDead: false
+                    }
+                ]
+            }
+        ];
+
+        let currentPuzzleIndex = 0;
+        
+        // Check if there's a test puzzle from the editor (within last 10 seconds)
+        const testPuzzleData = localStorage.getItem('werewolfTestPuzzle');
+        const testPuzzleTime = localStorage.getItem('werewolfTestPuzzleTime');
+        
+        console.log('Checking for test puzzle...', testPuzzleData ? 'Found!' : 'Not found');
+        
+        if (testPuzzleData && testPuzzleTime) {
+            const timeDiff = Date.now() - parseInt(testPuzzleTime);
+            console.log('Test puzzle age (ms):', timeDiff);
+            
+            // Only load if less than 10 seconds old (fresh test)
+            if (timeDiff < 10000) {
+                try {
+                    const testPuzzle = JSON.parse(testPuzzleData);
+                    testPuzzle.date = new Date().toDateString();
+                    testPuzzle.rule = "Identify the werewolves, before they kill more villagers! Werewolves always lie. Villagers always tell the truth.";
+                    
+                    console.log('Loading test puzzle:', testPuzzle);
+                    
+                    allPuzzles.unshift(testPuzzle); // Add test puzzle at the beginning
+                    
+                    // Clear the test puzzle so it doesn't reload on refresh
+                    localStorage.removeItem('werewolfTestPuzzle');
+                    localStorage.removeItem('werewolfTestPuzzleTime');
+                    
+                    // Show a notice
+                    setTimeout(() => {
+                        const notice = document.createElement('div');
+                        notice.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #606060; color: white; padding: 1rem 1.5rem; border-radius: 8px; font-family: "IM Fell English SC", serif; z-index: 1000; animation: fadeIn 0.5s;';
+                        notice.textContent = '🎮 Testing puzzle from editor';
+                        document.body.appendChild(notice);
+                        setTimeout(() => notice.remove(), 3000);
+                    }, 500);
+                } catch (e) {
+                    console.error('Failed to load test puzzle:', e);
+                }
+            } else {
+                console.log('Test puzzle too old, ignoring');
+            }
+        }
+        
+        let dailyPuzzle = allPuzzles[currentPuzzleIndex];
+        let selections = {};
+        let revealed = false;
+        let hasChecked = false;
+
+        function getPortraitForRole(role, isDead, gender) {
+            // Dead characters get skull
+            if (isDead) return { type: 'emoji', value: '💀' };
+            
+            // Image-based portraits (to be added later)
+            // For now, we'll use emojis as fallback
+            const imagePortraits = {
+                // 'Oracle': 'oracle.png',
+                // 'Dog': 'dog.png',
+                // etc - add your PNGs here later
+            };
+            
+            // Check if we have an image for this role
+            if (imagePortraits[role]) {
+                return { type: 'image', value: imagePortraits[role] };
+            }
+            
+            // Emoji fallbacks
+            const emojiPortraits = {
+                'Dog': '🐶',
+                'Oracle': '🧙‍♀️',
+                'Gossiper': '🗣️',
+                'Watcher': '👁️‍🗨️',
+                'Matchmaker': '💑',
+                'Journalist': '📰',
+                'Theorist': '👨‍🔬',
+                'Hunter': '🧑‍🌾',
+                'Passerby': '🚶‍♀️',
+                'Mayor': '👔',
+                'Spy': '🕵️‍♂️',
+                'Barkeep': '🧑‍🍳',
+                'Monk': '🧘‍♂️',
+                'Investigator': '🕵️‍♀️',
+                'Cop': '👮',
+                'Tarot Reader': '🔮',
+                'Coward': '😨',
+                'Dead body': '💀',
+                'Librarian': '📚',
+                'Gossip': '🗣️',
+                'Citizen': '🧑‍💼',
+                'Village Idiot': '🤪',
+                'Innkeeper': '🏠',
+                'Soldier': '🪖',
+                'Companion': '🤝',
+                'Chaperone': '👩‍👧',
+                'Savant': '🧠',
+                'Fool': '🃏',
+                'Matchmaker (Pair)': '💑',
+                'Custom': '✏️'
+            };
+            
+            // Use emoji portrait or default person
+            const emoji = emojiPortraits[role] || (gender === 'M' ? '👨' : gender === 'F' ? '👩' : '🧑');
+            return { type: 'emoji', value: emoji };
+        }
+
+        function colorizeStatement(statement) {
+            return statement
+                // Werewolf/werewolves - red and bold
+                .replace(/\b(werewolf|werewolves)\b/gi, '<strong style="color: #dc2626; font-weight: 700;">$1</strong>')
+                // Danger/dangerous - red and bold
+                .replace(/\b(danger|dangerous)\b/gi, '<strong style="color: #dc2626; font-weight: 700;">$1</strong>')
+                // Lie/lying/liar/lies - red and bold
+                .replace(/\b(lie|lies|lying|liar)\b/gi, '<strong style="color: #dc2626; font-weight: 700;">$1</strong>')
+                // Villager/villagers - gold and bold
+                .replace(/\b(villager|villagers)\b/gi, '<strong style="color: #d4af37; font-weight: 700;">$1</strong>')
+                // Truth/telling the truth - gold and bold
+                .replace(/\b(truth|telling the truth)\b/gi, '<strong style="color: #d4af37; font-weight: 700;">$1</strong>')
+                // Men/man/male - blue and bold
+                .replace(/\b(men|man|male)\b/gi, '<strong style="color: #4a9eff; font-weight: 700;">$1</strong>')
+                // Women/woman/female - pink and bold
+                .replace(/\b(women|woman|female)\b/gi, '<strong style="color: #ff6b9d; font-weight: 700;">$1</strong>');
+        }
+
+        function initGame() {
+            const grid = document.getElementById('grid');
+            const ruleText = document.getElementById('ruleText');
+            const werewolfCount = document.getElementById('werewolfCount');
+            const villagerCount = document.getElementById('villagerCount');
+
+            ruleText.textContent = dailyPuzzle.rule;
+            werewolfCount.textContent = dailyPuzzle.werewolfCount;
+            villagerCount.textContent = dailyPuzzle.characters.length - dailyPuzzle.werewolfCount;
+
+            grid.innerHTML = '';
+            dailyPuzzle.characters.forEach((char, index) => {
+                const card = document.createElement('div');
+                card.className = 'character-card';
+                if (char.isDead) {
+                    card.classList.add('dead-character');
+                }
+                
+                const genderIcon = char.gender === 'M' ? '♂' : char.gender === 'F' ? '♀' : '⚥';
+                const genderClass = char.gender === 'M' ? 'gender-male' : char.gender === 'F' ? 'gender-female' : 'gender-nb';
+                
+                const portrait = getPortraitForRole(char.role, char.isDead, char.gender);
+                const portraitHTML = portrait.type === 'image' 
+                    ? `<img src="${portrait.value}" alt="${char.role}">` 
+                    : portrait.value;
+                
+                card.innerHTML = `
+                    <div class="character-info">
+                        <div class="character-portrait">${portraitHTML}</div>
+                        <div class="character-text-content">
+                            <div class="character-name">
+                                ${char.name}${char.isDead ? ' 💀' : ''}
+                                <span class="gender-marker ${genderClass}">${genderIcon}</span>
+                                <span class="character-role">
+                                    ${char.role}
+                                    <div class="role-ability">${char.roleAbility}</div>
+                                </span>
+                            </div>
+                            <div class="character-statement">${colorizeStatement(char.statement)}</div>
+                        </div>
+                    </div>
+                    ${char.isDead ? 
+                        '<div class="dead-info"><div class="dead-note">💀 DEAD</div><div class="dead-note-text">ALWAYS TRUE</div></div>' : 
+                        `<div class="selection-buttons">
+                            <button class="btn btn-villager" data-index="${index}" data-type="villager">Villager</button>
+                            <button class="btn btn-werewolf" data-index="${index}" data-type="werewolf">Werewolf</button>
+                        </div>`
+                    }
+                `;
+                grid.appendChild(card);
+            });
+
+            // Add event listeners to buttons
+            document.querySelectorAll('.selection-buttons .btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const index = parseInt(btn.dataset.index);
+                    const type = btn.dataset.type;
+                    selectCharacter(index, type);
+                });
+            });
+        }
+
+        function selectCharacter(index, type) {
+            if (revealed) return;
+
+            const card = document.querySelectorAll('.character-card')[index];
+            const buttons = card.querySelectorAll('.btn');
+
+            // Toggle: if same type is clicked, deselect. Otherwise, select the new type.
+            if (selections[index] === type) {
+                // Clicking the same button again - deselect
+                delete selections[index];
+                card.classList.remove('selected-villager', 'selected-werewolf');
+                buttons.forEach(b => b.classList.remove('active'));
+            } else {
+                // Selecting a type (either new selection or changing from other type)
+                selections[index] = type;
+                card.classList.remove('selected-villager', 'selected-werewolf');
+                card.classList.add(type === 'villager' ? 'selected-villager' : 'selected-werewolf');
+                buttons.forEach(b => {
+                    b.classList.remove('active');
+                    if (b.dataset.type === type) {
+                        b.classList.add('active');
+                    }
+                });
+            }
+        }
+
+        function checkSolution() {
+            // Auto-assign unselected characters as villagers
+            dailyPuzzle.characters.forEach((char, index) => {
+                if (char.isDead) return; // Skip dead
+                if (!selections[index]) {
+                    selections[index] = 'villager';
+                }
+            });
+            
+            hasChecked = true;
+            let correct = 0;
+            let total = 0;
+
+            dailyPuzzle.characters.forEach((char, index) => {
+                const userSelection = selections[index];
+                const actualType = char.isWerewolf ? 'werewolf' : 'villager';
+
+                // Only count living characters in the score
+                if (!char.isDead) {
+                    total++;
+                    if (userSelection === actualType) {
+                        correct++;
+                    }
+                }
+            });
+
+            const resultArea = document.getElementById('resultArea');
+            const allCorrect = correct === total;
+
+            if (allCorrect) {
+                resultArea.innerHTML = `
+                    <div class="result success">
+                        🎉 Perfect! You've identified all the werewolves!
+                    </div>
+                `;
+            } else {
+                resultArea.innerHTML = `
+                    <div class="result failure">
+                        ❌ Not quite right. You got ${correct}/${total} correct.
+                    </div>
+                `;
+            }
+
+            // Show reveal solution button after first check
+            document.getElementById('revealControls').style.display = 'flex';
+            
+            // Re-render to update UI with auto-assigned selections
+            initGame();
+        }
+
+        function revealSolution() {
+            // Clear all selections and show the actual solution
+            resetGame();
+            revealed = true;
+
+            dailyPuzzle.characters.forEach((char, index) => {
+                const card = document.querySelectorAll('.character-card')[index];
+                const buttons = card.querySelectorAll('.btn');
+                const actualType = char.isWerewolf ? 'werewolf' : 'villager';
+
+                // Set the selection to the correct answer
+                selections[index] = actualType;
+                card.classList.add(actualType === 'villager' ? 'selected-villager' : 'selected-werewolf');
+                card.classList.add(char.isWerewolf ? 'revealed-werewolf' : 'revealed-villager');
+                
+                buttons.forEach(b => {
+                    if (b.dataset.type === actualType) {
+                        b.classList.add('active');
+                    }
+                });
+            });
+
+            const resultArea = document.getElementById('resultArea');
+            resultArea.innerHTML = `
+                <div class="result success">
+                    ✨ Solution Revealed! The werewolves were: ${dailyPuzzle.characters.filter(c => c.isWerewolf).map(c => c.name).join(' and ')}.
+                </div>
+            `;
+        }
+
+        function resetGame() {
+            revealed = false;
+            selections = {};
+            document.getElementById('resultArea').innerHTML = '';
+            
+            document.querySelectorAll('.character-card').forEach(card => {
+                card.classList.remove('selected-villager', 'selected-werewolf', 'revealed-villager', 'revealed-werewolf');
+            });
+
+            document.querySelectorAll('.selection-buttons .btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+        }
+
+        function nextPuzzle() {
+            // Cycle to next puzzle
+            currentPuzzleIndex = (currentPuzzleIndex + 1) % allPuzzles.length;
+            dailyPuzzle = allPuzzles[currentPuzzleIndex];
+            
+            // Reset state
+            selections = {};
+            revealed = false;
+            hasChecked = false;
+            
+            // Clear results and hide reveal button
+            document.getElementById('resultArea').innerHTML = '';
+            document.getElementById('revealControls').style.display = 'none';
+            
+            // Update puzzle number display
+            document.getElementById('puzzleNumber').textContent = `Puzzle ${currentPuzzleIndex + 1}`;
+            
+            // Reinitialize the game with new puzzle
+            initGame();
+        }
+
+        function importCustomPuzzle(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n').slice(1); // Skip header
+                
+                const characters = [];
+                let werewolfCount = 0;
+                
+                lines.forEach((line, index) => {
+                    if (!line.trim()) return;
+                    
+                    // Parse CSV (handle quoted fields)
+                    const regex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+                    const parts = line.split(regex);
+                    
+                    if (parts.length < 4) return;
+                    
+                    const isWerewolf = parts[2].toLowerCase().includes('yes');
+                    if (isWerewolf) werewolfCount++;
+                    
+                    const char = {
+                        name: parts[0].trim(),
+                        gender: parts[1].includes('♂') ? 'M' : (parts[1].includes('♀') ? 'F' : 'NB'),
+                        role: parts[4] ? parts[4].trim() : 'Unknown',
+                        roleAbility: parts[5] ? parts[5].trim() : '',
+                        statement: parts[3].replace(/^"|"$/g, '').trim(), // Remove quotes
+                        isWerewolf: isWerewolf,
+                        isDead: false // Can be enhanced later
+                    };
+                    
+                    characters.push(char);
+                });
+                
+                if (characters.length === 0) {
+                    alert('No valid characters found in CSV!');
+                    return;
+                }
+                
+                // Create custom puzzle
+                const customPuzzle = {
+                    date: new Date().toDateString(),
+                    rule: "Identify the werewolves, before they kill more villagers! Werewolves always lie. Villagers always tell the truth.",
+                    werewolfCount: werewolfCount,
+                    characters: characters
+                };
+                
+                // Add to beginning of puzzles array
+                allPuzzles.unshift(customPuzzle);
+                currentPuzzleIndex = 0;
+                dailyPuzzle = allPuzzles[0];
+                
+                // Reset state
+                selections = {};
+                revealed = false;
+                hasChecked = false;
+                
+                // Clear results and hide reveal button
+                document.getElementById('resultArea').innerHTML = '';
+                document.getElementById('revealControls').style.display = 'none';
+                
+                // Update puzzle number
+                document.getElementById('puzzleNumber').textContent = `Puzzle 1`;
+                
+                // Initialize with custom puzzle
+                initGame();
+                
+                // Show notification
+                const notice = document.createElement('div');
+                notice.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #606060; color: white; padding: 1rem 1.5rem; border-radius: 8px; font-family: "IM Fell English SC", serif; z-index: 1000;';
+                notice.textContent = `✅ Loaded custom puzzle (${characters.length} characters)`;
+                document.body.appendChild(notice);
+                setTimeout(() => notice.remove(), 3000);
+                
+                // Clear file input
+                event.target.value = '';
+            };
+            
+            reader.readAsText(file);
+        }
+
+        document.getElementById('submitBtn').addEventListener('click', checkSolution);
+        document.getElementById('resetBtn').addEventListener('click', resetGame);
+        document.getElementById('revealBtn').addEventListener('click', revealSolution);
+        document.getElementById('debugNextBtn').addEventListener('click', nextPuzzle);
+
+        // Initialize the game
+        initGame();
+    </script>
+</body>
+</html>

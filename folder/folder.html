@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FOLDERDLE - Daily Puzzle</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+        }
+        
+        :root {
+            --gold: #D4AF37;
+            --gold-dim: #B8972E;
+            --gold-bright: #FFD700;
+            --bg: #0a0a0a;
+            --bg2: rgba(255,255,255,0.04);
+            --text: #e8e8e8;
+            --text-dim: #888;
+            --red: #cc4444;
+            --mono: 'DM Mono', monospace;
+            --display: 'Bebas Neue', cursive;
+        }
+        
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--mono);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px 15px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            min-width: 320px;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .game-title {
+            font-family: var(--display);
+            font-size: clamp(52px, 12vw, 84px);
+            font-weight: 400;
+            color: var(--gold);
+            letter-spacing: 6px;
+            line-height: 1;
+            text-shadow: 0 0 50px rgba(212,175,55,0.5);
+        }
+        
+        .subtitle {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--gold-dim);
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            margin-top: 8px;
+        }
+        
+        /* Instructions */
+        .instructions {
+            background: rgba(212,175,55,0.05);
+            border: 1px solid rgba(212,175,55,0.18);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin: 15px auto 30px;
+            max-width: 800px;
+            line-height: 1.7;
+        }
+        
+        .instructions strong {
+            color: var(--gold-dim);
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        .instructions ul {
+            margin: 8px 0 0 16px;
+            padding: 0;
+            list-style: none;
+        }
+        
+        .instructions li {
+            font-size: 14px;
+            color: #bbb;
+            margin: 4px 0;
+            padding-left: 12px;
+            position: relative;
+        }
+        
+        .instructions li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--gold-dim);
+        }
+        
+        .instructions li strong {
+            color: var(--text);
+            font-size: 14px;
+            letter-spacing: 0;
+            text-transform: none;
+        }
+        
+        .game-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 20px;
+            align-items: start;
+        }
+        
+        /* LEFT COLUMN - Fact Cards */
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            gap: 15px;
+        }
+        
+        .documents-pile {
+            display: contents;
+        }
+        
+        .pile-header {
+            display: none;
+        }
+        
+        .documents-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 100px;
+            padding: 12px;
+            background: var(--bg2);
+            border: 1px solid rgba(212,175,55,0.07);
+            border-radius: 11px;
+            cursor: pointer;
+        }
+        
+        .documents-grid:empty::before {
+            content: 'Click a card in a slot to return it here';
+            color: var(--text-dim);
+            text-align: center;
+            font-size: 12px;
+            opacity: 0.7;
+            padding: 16px;
+        }
+        
+        .left-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .checks-display {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg2);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(212,175,55,0.07);
+        }
+        
+        .check-icon {
+            font-size: 20px;
+            transition: opacity 0.3s;
+            color: var(--gold);
+        }
+        
+        .check-icon.used {
+            opacity: 0.15;
+        }
+        
+        .button-row {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .document {
+            background: rgba(255,255,255,0.015);
+            border: 1px solid rgba(212,175,55,0.07);
+            border-radius: 8px;
+            padding: 10px 8px;
+            cursor: move;
+            font-size: 14px;
+            text-align: center;
+            min-height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: border-color 0.2s, transform 0.1s;
+            touch-action: none;
+            user-select: none;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            line-height: 1.4;
+            font-weight: 400;
+            color: var(--text);
+            max-width: 100%;
+            position: relative;
+        }
+        
+        .document:hover {
+            border-color: rgba(212,175,55,0.18);
+            transform: translateY(-2px);
+        }
+        
+        .document.dragging {
+            opacity: 0.5;
+        }
+        
+        .document.selected {
+            border: 2px solid var(--gold);
+            background: rgba(212,175,55,0.08);
+            box-shadow: 0 0 20px rgba(212,175,55,0.3);
+        }
+        
+        .document.in-slot {
+            padding-right: 28px;
+        }
+        
+        .remove-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 20px;
+            height: 20px;
+            background: var(--red);
+            color: var(--text);
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            z-index: 10;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s, background 0.2s;
+        }
+        
+        .document.in-slot .remove-btn {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .remove-btn:hover {
+            background: #dd5555;
+        }
+        
+        .remove-btn:active {
+            background: #bb3333;
+        }
+        
+        .slot.drag-over {
+            background: #ffff00;
+            border: 2px solid #000000;
+        }
+        
+        .slot.drag-over-filled {
+            background: #ff9900;
+            border: 3px solid #ff0000;
+        }
+        
+        /* RIGHT COLUMN - Subject Frames */
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-width: 0;
+        }
+        
+        .subject-frame {
+            background: rgba(212,175,55,0.05);
+            border: 1px solid rgba(212,175,55,0.2);
+            border-radius: 11px;
+            padding: 0;
+            width: 100%;
+            transition: border-color 0.3s;
+        }
+        
+        .subject-frame:hover {
+            border-color: rgba(212,175,55,0.3);
+        }
+        
+        .subject-header {
+            background: transparent;
+            padding: 12px;
+            border-radius: 11px 11px 0 0;
+            font-family: var(--display);
+            font-size: 28px;
+            font-weight: 400;
+            text-align: center;
+            color: var(--gold);
+            letter-spacing: 3px;
+            line-height: 1.3;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            min-height: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .subject-body {
+            background: transparent;
+            border-radius: 0 0 11px 11px;
+            padding: 12px;
+        }
+        
+        .subject-slots {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .slot {
+            background: var(--bg2);
+            border: 1px solid rgba(212,175,55,0.15);
+            border-radius: 6px;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dim);
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            padding: 5px;
+            cursor: pointer;
+        }
+        
+        .slot:hover {
+            border-color: rgba(212,175,55,0.3);
+        }
+        
+        .slot.drag-over {
+            background: rgba(212,175,55,0.1);
+            border-color: var(--gold);
+        }
+        
+        .slot.drag-over-filled {
+            background: rgba(204,68,68,0.1);
+            border-color: var(--red);
+        }
+        
+        .slot.filled {
+            background: transparent;
+            border: none;
+            padding: 0;
+        }
+        
+        .slot .document {
+            width: 100%;
+            margin: 0;
+        }
+        
+        .subject-status {
+            margin-top: 8px;
+            padding: 6px;
+            background: rgba(212,175,55,0.08);
+            border: 1px solid rgba(212,175,55,0.2);
+            border-radius: 6px;
+            text-align: center;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+            display: none;
+            color: var(--gold-dim);
+        }
+        
+        .subject-status.show {
+            display: block;
+        }
+        
+        .subject-status.correct {
+            background: rgba(212,175,55,0.15);
+            color: var(--gold);
+            border-color: var(--gold);
+        }
+        
+        /* Controls */
+        .btn {
+            font-family: var(--display);
+            font-size: 22px;
+            font-weight: 400;
+            letter-spacing: 3px;
+            padding: 11px 32px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+            flex: 1;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-primary {
+            background: var(--gold);
+            color: var(--bg);
+            box-shadow: 0 0 28px rgba(212,175,55,0.4);
+        }
+        
+        .btn-primary:hover {
+            background: var(--gold-bright);
+        }
+        
+        .btn-primary:active {
+            background: var(--gold-dim);
+        }
+        
+        .btn:not(.btn-primary) {
+            background: transparent;
+            color: var(--gold);
+            border: 2px solid var(--gold);
+            padding: 9px 30px;
+        }
+        
+        .btn:not(.btn-primary):hover {
+            background: rgba(212,175,55,0.07);
+        }
+        
+        .result-box {
+            background: rgba(212,175,55,0.05);
+            border: 1px solid rgba(212,175,55,0.3);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            display: none;
+        }
+        
+        .result-box.show {
+            display: block;
+        }
+        
+        .result-box.victory {
+            background: rgba(10,10,10,0.97);
+            border: 2px solid var(--gold);
+            box-shadow: 0 0 60px rgba(212,175,55,0.5);
+        }
+        
+        .score {
+            font-family: var(--display);
+            font-size: 42px;
+            font-weight: 400;
+            letter-spacing: 4px;
+            color: var(--gold);
+            margin-bottom: 10px;
+        }
+        
+        .btn-reveal {
+            background: var(--red);
+            color: var(--text);
+            margin-top: 15px;
+            border: none;
+            font-family: var(--display);
+            font-size: 19px;
+            letter-spacing: 3px;
+            padding: 10px 38px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .btn-reveal:hover {
+            background: #dd5555;
+        }
+        
+        .btn-reveal:active {
+            background: #bb3333;
+        }
+        
+        /* Confetti Animation */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            position: absolute;
+            animation: confetti-fall 3s linear forwards;
+            z-index: 10000;
+        }
+        
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        .debug-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(212,175,55,0.1);
+            color: var(--gold);
+            border: 1px solid rgba(212,175,55,0.3);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: var(--display);
+            font-size: 20px;
+            font-weight: 400;
+            cursor: pointer;
+            z-index: 10000;
+            line-height: 1;
+            transition: background 0.2s;
+        }
+        
+        .debug-btn:hover {
+            background: rgba(212,175,55,0.15);
+        }
+        
+        /* Mobile responsive - keep two columns! */
+        @media (max-width: 768px) {
+            .game-area {
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+            
+            .game-title {
+                font-size: 48px;
+            }
+            
+            .subject-header {
+                font-size: 22px;
+                padding: 10px;
+                min-height: 50px;
+                letter-spacing: 2px;
+            }
+            
+            .document {
+                font-size: 13px;
+                padding: 8px 6px;
+                min-height: 42px;
+            }
+            
+            .slot {
+                min-height: 45px;
+                font-size: 10px;
+            }
+            
+            .btn {
+                font-size: 20px;
+                padding: 10px 24px;
+            }
+            
+            .instructions li {
+                font-size: 13px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .game-area {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            
+            .game-title {
+                font-size: 36px;
+            }
+            
+            .subject-header {
+                font-size: 18px;
+                padding: 8px 5px;
+                letter-spacing: 1px;
+            }
+            
+            .document {
+                font-size: 12px;
+                padding: 7px 5px;
+                min-height: 38px;
+            }
+            
+            .slot {
+                min-height: 40px;
+                font-size: 9px;
+                padding: 4px;
+            }
+            
+            .subject-body {
+                padding: 10px;
+            }
+            
+            .subject-slots {
+                gap: 6px;
+            }
+            
+            .btn {
+                font-size: 18px;
+                padding: 9px 20px;
+            }
+            
+            .instructions {
+                padding: 12px 16px;
+            }
+            
+            .instructions li {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="game-title">FOLDERDLE</div>
+            <div class="subtitle">Sort the facts into their correct folders</div>
+        </div>
+        
+        <div class="instructions">
+            <strong>HERE'S THE TWIST:</strong> You can see the folders, but their names are scrambled! 
+            <ul>
+                <li><strong>Click a fact</strong> to select it (it'll turn yellow)</li>
+                <li><strong>Click a slot</strong> to place it there</li>
+                <li><strong>Click the × button</strong> or the card itself to remove it</li>
+                <li><strong>Hit CHECK</strong> to see if you're right (you get 5 tries!)</li>
+                <li>Each check reveals more letters...</li>
+            </ul>
+        </div>
+        
+        <div class="game-area">
+            <!-- LEFT COLUMN: Fact Cards -->
+            <div class="left-column">
+                <div class="documents-pile">
+                    <div class="pile-header">Facts to Sort</div>
+                    <div class="documents-grid" id="documentsPile">
+                        <!-- Facts will be added here by JavaScript -->
+                    </div>
+                </div>
+                
+                <div class="left-controls">
+                    <div class="checks-display">
+                        <span class="check-icon">✓</span>
+                        <span class="check-icon">✓</span>
+                        <span class="check-icon">✓</span>
+                        <span class="check-icon">✓</span>
+                        <span class="check-icon">✓</span>
+                    </div>
+                    <div class="button-row">
+                        <button class="btn btn-primary" id="checkBtn">CHECK</button>
+                        <button class="btn" id="resetBtn">RESET</button>
+                    </div>
+                    <div class="result-box" id="resultBox">
+                        <div id="resultText"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- RIGHT COLUMN: Subject Frames -->
+            <div class="right-column" id="subjectFrames">
+                <!-- Subject frames will be added here by JavaScript -->
+            </div>
+        </div>
+    </div>
+    
+    <button class="debug-btn" id="debugCycle">→</button>
+    
+    <script>
+        // Puzzle data structure: 3 subjects, each with 3 facts (9 total)
+        const puzzles = [
+            {
+                subjects: [
+                    {
+                        name: "HONEY",
+                        facts: [
+                            { text: "NEVER SPOILS", answer: 0 },
+                            { text: "MADE BY BEES", answer: 0 },
+                            { text: "FOUND IN PYRAMIDS", answer: 0 }
+                        ]
+                    },
+                    {
+                        name: "LEGO BRICKS",
+                        facts: [
+                            { text: "PLASTIC MATERIAL", answer: 1 },
+                            { text: "INTERLOCKING PIECES", answer: 1 },
+                            { text: "MADE IN DENMARK", answer: 1 }
+                        ]
+                    },
+                    {
+                        name: "MAPLE SYRUP",
+                        facts: [
+                            { text: "FROM TREE SAP", answer: 2 },
+                            { text: "BOILED TO THICKEN", answer: 2 },
+                            { text: "SWEET PANCAKE TOPPING", answer: 2 }
+                        ]
+                    }
+                ]
+            },
+            {
+                subjects: [
+                    {
+                        name: "DOLPHINS",
+                        facts: [
+                            { text: "ARE MAMMALS", answer: 0 },
+                            { text: "HAVE BLOWHOLE", answer: 0 },
+                            { text: "USE ECHOLOCATION", answer: 0 }
+                        ]
+                    },
+                    {
+                        name: "SHARKS",
+                        facts: [
+                            { text: "ARE FISH", answer: 1 },
+                            { text: "HAVE GILLS", answer: 1 },
+                            { text: "CARTILAGE SKELETON", answer: 1 }
+                        ]
+                    },
+                    {
+                        name: "JELLYFISH",
+                        facts: [
+                            { text: "CAN STING", answer: 2 },
+                            { text: "MOSTLY WATER", answer: 2 },
+                            { text: "TRANSPARENT BODY", answer: 2 }
+                        ]
+                    }
+                ]
+            },
+            {
+                subjects: [
+                    {
+                        name: "GUITAR",
+                        facts: [
+                            { text: "HAS FRETS", answer: 0 },
+                            { text: "PLUCKED STRINGS", answer: 0 },
+                            { text: "USUALLY PORTABLE", answer: 0 }
+                        ]
+                    },
+                    {
+                        name: "PIANO",
+                        facts: [
+                            { text: "HAS HAMMERS", answer: 1 },
+                            { text: "HAS 88 KEYS", answer: 1 },
+                            { text: "EXTREMELY HEAVY", answer: 1 }
+                        ]
+                    },
+                    {
+                        name: "DRUMS",
+                        facts: [
+                            { text: "HIT WITH STICKS", answer: 2 },
+                            { text: "PERCUSSION INSTRUMENT", answer: 2 },
+                            { text: "KEEPS THE BEAT", answer: 2 }
+                        ]
+                    }
+                ]
+            },
+            {
+                subjects: [
+                    {
+                        name: "OCTOPUS",
+                        facts: [
+                            { text: "HAS THREE HEARTS", answer: 0 },
+                            { text: "BLUE BLOOD", answer: 0 },
+                            { text: "CAN CHANGE COLOR", answer: 0 }
+                        ]
+                    },
+                    {
+                        name: "GIRAFFE",
+                        facts: [
+                            { text: "TALLEST ANIMAL", answer: 1 },
+                            { text: "SAME NECK BONES AS HUMAN", answer: 1 },
+                            { text: "PURPLE TONGUE", answer: 1 }
+                        ]
+                    },
+                    {
+                        name: "PLATYPUS",
+                        facts: [
+                            { text: "LAYS EGGS", answer: 2 },
+                            { text: "HAS VENOMOUS SPURS", answer: 2 },
+                            { text: "SWEATS MILK", answer: 2 }
+                        ]
+                    }
+                ]
+            },
+            {
+                subjects: [
+                    {
+                        name: "VENUS",
+                        facts: [
+                            { text: "HOTTEST PLANET", answer: 0 },
+                            { text: "SPINS BACKWARDS", answer: 0 },
+                            { text: "DAY LONGER THAN YEAR", answer: 0 }
+                        ]
+                    },
+                    {
+                        name: "SATURN",
+                        facts: [
+                            { text: "HAS VISIBLE RINGS", answer: 1 },
+                            { text: "FLOATS IN WATER", answer: 1 },
+                            { text: "62 KNOWN MOONS", answer: 1 }
+                        ]
+                    },
+                    {
+                        name: "NEPTUNE",
+                        facts: [
+                            { text: "FASTEST WINDS", answer: 2 },
+                            { text: "RAINS DIAMONDS", answer: 2 },
+                            { text: "BLUE FROM METHANE", answer: 2 }
+                        ]
+                    }
+                ]
+            },
+            {
+                subjects: [
+                    {
+                        name: "TOMATO",
+                        facts: [
+                            { text: "TECHNICALLY A FRUIT", answer: 0 },
+                            { text: "95% WATER", answer: 0 },
+                            { text: "MORE GENES THAN HUMANS", answer: 0 }
+                        ]
+                    },
+                    {
+                        name: "BANANA",
+                        facts: [
+                            { text: "BERRIES BOTANICALLY", answer: 1 },
+                            { text: "NATURALLY RADIOACTIVE", answer: 1 },
+                            { text: "CURVED FROM SUN", answer: 1 }
+                        ]
+                    },
+                    {
+                        name: "PEANUT",
+                        facts: [
+                            { text: "GROWS UNDERGROUND", answer: 2 },
+                            { text: "NOT A NUT", answer: 2 },
+                            { text: "MAKES DYNAMITE", answer: 2 }
+                        ]
+                    }
+                ]
+            },
+            {
+                subjects: [
+                    {
+                        name: "EIFFEL TOWER",
+                        facts: [
+                            { text: "GROWS IN SUMMER", answer: 0 },
+                            { text: "REPAINTED EVERY 7 YEARS", answer: 0 },
+                            { text: "WAS TEMPORARY", answer: 0 }
+                        ]
+                    },
+                    {
+                        name: "GREAT WALL",
+                        facts: [
+                            { text: "NOT VISIBLE FROM SPACE", answer: 1 },
+                            { text: "USED STICKY RICE", answer: 1 },
+                            { text: "13000 MILES LONG", answer: 1 }
+                        ]
+                    },
+                    {
+                        name: "STATUE LIBERTY",
+                        facts: [
+                            { text: "GIFT FROM FRANCE", answer: 2 },
+                            { text: "USED TO BE SHINY", answer: 2 },
+                            { text: "LIGHTHOUSE BRIEFLY", answer: 2 }
+                        ]
+                    }
+                ]
+            },
+            {
+                subjects: [
+                    {
+                        name: "CROWS",
+                        facts: [
+                            { text: "HOLD GRUDGES", answer: 0 },
+                            { text: "MAKE TOOLS", answer: 0 },
+                            { text: "RECOGNIZE FACES", answer: 0 }
+                        ]
+                    },
+                    {
+                        name: "PIGEONS",
+                        facts: [
+                            { text: "SEE UV LIGHT", answer: 1 },
+                            { text: "CAN DO MATH", answer: 1 },
+                            { text: "WAR HEROES", answer: 1 }
+                        ]
+                    },
+                    {
+                        name: "PARROTS",
+                        facts: [
+                            { text: "NAME THEIR BABIES", answer: 2 },
+                            { text: "LIVE 80 YEARS", answer: 2 },
+                            { text: "LAUGH AT JOKES", answer: 2 }
+                        ]
+                    }
+                ]
+            },
+            {
+                subjects: [
+                    {
+                        name: "COCA COLA",
+                        facts: [
+                            { text: "ORIGINALLY HAD COCAINE", answer: 0 },
+                            { text: "OWNED SANTA IMAGE", answer: 0 },
+                            { text: "DISSOLVES TEETH", answer: 0 }
+                        ]
+                    },
+                    {
+                        name: "PEPSI",
+                        facts: [
+                            { text: "NAMED AFTER ENZYME", answer: 1 },
+                            { text: "HAD 6TH LARGEST NAVY", answer: 1 },
+                            { text: "SOLD AS MEDICINE", answer: 1 }
+                        ]
+                    },
+                    {
+                        name: "DR PEPPER",
+                        facts: [
+                            { text: "OLDEST SODA", answer: 2 },
+                            { text: "NO PERIOD IN NAME", answer: 2 },
+                            { text: "23 FLAVORS", answer: 2 }
+                        ]
+                    }
+                ]
+            },
+            {
+                subjects: [
+                    {
+                        name: "CLEOPATRA",
+                        facts: [
+                            { text: "CLOSER TO IPHONE", answer: 0 },
+                            { text: "SPOKE 9 LANGUAGES", answer: 0 },
+                            { text: "NOT EGYPTIAN", answer: 0 }
+                        ]
+                    },
+                    {
+                        name: "NAPOLEON",
+                        facts: [
+                            { text: "ATTACKED BY RABBITS", answer: 1 },
+                            { text: "NOT ACTUALLY SHORT", answer: 1 },
+                            { text: "WROTE ROMANCE NOVEL", answer: 1 }
+                        ]
+                    },
+                    {
+                        name: "EINSTEIN",
+                        facts: [
+                            { text: "FAILED MATH MYTH", answer: 2 },
+                            { text: "COULD HAVE BEEN PRESIDENT", answer: 2 },
+                            { text: "BRAIN WAS STOLEN", answer: 2 }
+                        ]
+                    }
+                ]
+            },
+            {
+                subjects: [
+                    {
+                        name: "GOLD",
+                        facts: [
+                            { text: "EDIBLE METAL", answer: 0 },
+                            { text: "CAME FROM SPACE", answer: 0 },
+                            { text: "NEVER RUSTS", answer: 0 }
+                        ]
+                    },
+                    {
+                        name: "DIAMONDS",
+                        facts: [
+                            { text: "BURNS IN FIRE", answer: 1 },
+                            { text: "RAINS ON SATURN", answer: 1 },
+                            { text: "MADE FROM CARBON", answer: 1 }
+                        ]
+                    },
+                    {
+                        name: "PEARLS",
+                        facts: [
+                            { text: "DISSOLVE IN VINEGAR", answer: 2 },
+                            { text: "OYSTER IMMUNE RESPONSE", answer: 2 },
+                            { text: "ONLY GEM FROM LIFE", answer: 2 }
+                        ]
+                    }
+                ]
+            },
+            {
+                subjects: [
+                    {
+                        name: "TYRANNOSAURUS",
+                        facts: [
+                            { text: "ARMS TOO SHORT", answer: 0 },
+                            { text: "CLOSEST TO CHICKENS", answer: 0 },
+                            { text: "LIVED WITH FLOWERS", answer: 0 }
+                        ]
+                    },
+                    {
+                        name: "STEGOSAURUS",
+                        facts: [
+                            { text: "BRAIN SIZE OF WALNUT", answer: 1 },
+                            { text: "PLATES FOR DISPLAY", answer: 1 },
+                            { text: "TAIL SPIKES CALLED THAGOMIZER", answer: 1 }
+                        ]
+                    },
+                    {
+                        name: "VELOCIRAPTOR",
+                        facts: [
+                            { text: "TURKEY SIZED", answer: 2 },
+                            { text: "HAD FEATHERS", answer: 2 },
+                            { text: "JURASSIC PARK LIED", answer: 2 }
+                        ]
+                    }
+                ]
+            }
+        ];
+        
+        let currentPuzzle = null;
+        let currentPuzzleIndex = 0;
+        let checksRemaining = 5;
+        let revealProgress = 0;
+        let draggedElement = null;
+        let touchClone = null;
+        let selectedCard = null; // For mobile click/tap selection
+        
+        // Initialize game
+        function initGame(puzzleIndex = null) {
+            if (puzzleIndex !== null) {
+                currentPuzzleIndex = puzzleIndex;
+            } else {
+                const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+                currentPuzzleIndex = dayOfYear % puzzles.length;
+            }
+            
+            currentPuzzle = puzzles[currentPuzzleIndex];
+            checksRemaining = 5;
+            revealProgress = 0;
+            
+            // Reset check icons
+            document.querySelectorAll('.check-icon').forEach(icon => {
+                icon.classList.remove('used');
+            });
+            
+            // Create subject frames
+            createSubjectFrames();
+            
+            // Collect all facts and shuffle
+            const allFacts = [];
+            currentPuzzle.subjects.forEach((subject, subjectIndex) => {
+                subject.facts.forEach(fact => {
+                    allFacts.push({
+                        text: fact.text,
+                        answer: fact.answer,
+                        subjectIndex: subjectIndex
+                    });
+                });
+            });
+            
+            // Shuffle facts
+            const shuffledFacts = allFacts.sort(() => Math.random() - 0.5);
+            
+            // Add facts to pile
+            const pile = document.getElementById('documentsPile');
+            pile.innerHTML = '';
+            shuffledFacts.forEach((fact, index) => {
+                const doc = createDocument(fact.text, fact.answer, index);
+                pile.appendChild(doc);
+            });
+            
+            // Hide result box
+            document.getElementById('resultBox').classList.remove('show');
+        }
+        
+        function createSubjectFrames() {
+            const container = document.getElementById('subjectFrames');
+            container.innerHTML = '';
+            
+            // Group subjects by letter count first to determine hints
+            const subjectsByLength = {};
+            currentPuzzle.subjects.forEach((subject, index) => {
+                const length = subject.name.replace(/ /g, '').length;
+                if (!subjectsByLength[length]) {
+                    subjectsByLength[length] = [];
+                }
+                subjectsByLength[length].push({ subject, index });
+            });
+            
+            // Calculate hint positions
+            const hintPositions = {};
+            Object.values(subjectsByLength).forEach(group => {
+                if (group.length >= 2) {
+                    for (let i = 0; i < group.length; i++) {
+                        for (let j = i + 1; j < group.length; j++) {
+                            const diffPos = findDifferentiatingPosition(
+                                group[i].subject.name,
+                                group[j].subject.name
+                            );
+                            hintPositions[group[i].index] = diffPos;
+                            hintPositions[group[j].index] = diffPos;
+                        }
+                    }
+                }
+            });
+            
+            currentPuzzle.subjects.forEach((subject, index) => {
+                const frame = document.createElement('div');
+                frame.className = 'subject-frame';
+                frame.dataset.subjectIndex = index;
+                
+                // Scramble the subject name with hint if applicable
+                const hintPos = hintPositions[index];
+                const scrambledName = hintPos !== undefined 
+                    ? scrambleTextWithHint(subject.name, revealProgress / 5, hintPos)
+                    : scrambleText(subject.name, revealProgress / 5);
+                const spacedName = scrambledName.split('').join(' ');
+                
+                frame.innerHTML = `
+                    <div class="subject-header" data-subject="${index}">
+                        ${spacedName}
+                    </div>
+                    <div class="subject-body">
+                        <div class="subject-slots" data-subject="${index}">
+                            <div class="slot" data-slot="0">Drop fact here...</div>
+                            <div class="slot" data-slot="1">Drop fact here...</div>
+                            <div class="slot" data-slot="2">Drop fact here...</div>
+                        </div>
+                        <div class="subject-status" id="status${index}"></div>
+                    </div>
+                `;
+                
+                container.appendChild(frame);
+                
+                // Add drop listeners to slots (for desktop drag)
+                const slots = frame.querySelectorAll('.slot');
+                slots.forEach(slot => {
+                    slot.addEventListener('dragover', handleDragOver);
+                    slot.addEventListener('drop', handleDrop);
+                    slot.addEventListener('dragleave', handleDragLeave);
+                    
+                    // Add click handler for mobile/desktop selection mode
+                    slot.addEventListener('click', handleSlotClick);
+                });
+            });
+        }
+        
+        function handleSlotClick(e) {
+            const slot = e.currentTarget;
+            
+            // If no card is selected, do nothing
+            if (!selectedCard) return;
+            
+            // If slot already has a card, move it back to the pile
+            const existingDoc = slot.querySelector('.document');
+            if (existingDoc) {
+                returnCardToPile(existingDoc);
+            }
+            
+            // Remove from old parent if it was in a slot
+            if (selectedCard.parentElement.classList.contains('slot')) {
+                selectedCard.parentElement.classList.remove('filled');
+            }
+            
+            // Add selected card to this slot
+            slot.innerHTML = '';
+            slot.appendChild(selectedCard);
+            slot.classList.add('filled');
+            
+            // Mark card as in-slot and deselect
+            selectedCard.classList.add('in-slot');
+            selectedCard.classList.remove('selected');
+            selectedCard = null;
+        }
+        
+        function scrambleText(text, revealPercent) {
+            const revealCount = Math.floor(text.replace(/ /g, '').length * revealPercent);
+            let nonSpaceIndex = 0;
+            
+            return text.split('').map((char) => {
+                if (char === ' ') {
+                    return '▪'; // Use a small block to show word gaps
+                }
+                const shouldReveal = nonSpaceIndex < revealCount;
+                nonSpaceIndex++;
+                return shouldReveal ? char : '█';
+            }).join('');
+        }
+        
+        function findDifferentiatingPosition(subjectA, subjectB) {
+            // Find first position where subjects differ
+            const cleanA = subjectA.replace(/ /g, '');
+            const cleanB = subjectB.replace(/ /g, '');
+            
+            for (let i = 0; i < Math.min(cleanA.length, cleanB.length); i++) {
+                if (cleanA[i] !== cleanB[i]) {
+                    return i;
+                }
+            }
+            return 0; // Default to first letter if somehow identical
+        }
+        
+        function scrambleTextWithHint(text, revealPercent, hintPosition = null) {
+            const revealCount = Math.floor(text.replace(/ /g, '').length * revealPercent);
+            let nonSpaceIndex = 0;
+            
+            return text.split('').map((char) => {
+                if (char === ' ') {
+                    return '▪'; // Use a small block to show word gaps
+                }
+                const shouldReveal = nonSpaceIndex < revealCount || (hintPosition !== null && nonSpaceIndex === hintPosition);
+                nonSpaceIndex++;
+                return shouldReveal ? char : '█';
+            }).join('');
+        }
+        
+        function updateSubjectNames() {
+            // Group subjects by letter count (excluding spaces)
+            const subjectsByLength = {};
+            currentPuzzle.subjects.forEach((subject, index) => {
+                const length = subject.name.replace(/ /g, '').length;
+                if (!subjectsByLength[length]) {
+                    subjectsByLength[length] = [];
+                }
+                subjectsByLength[length].push({ subject, index });
+            });
+            
+            // For each group with 2+ subjects, find differentiating positions
+            const hintPositions = {};
+            Object.values(subjectsByLength).forEach(group => {
+                if (group.length >= 2) {
+                    // Compare each pair and find where they differ
+                    for (let i = 0; i < group.length; i++) {
+                        for (let j = i + 1; j < group.length; j++) {
+                            const diffPos = findDifferentiatingPosition(
+                                group[i].subject.name,
+                                group[j].subject.name
+                            );
+                            // Store the hint position for both subjects
+                            hintPositions[group[i].index] = diffPos;
+                            hintPositions[group[j].index] = diffPos;
+                        }
+                    }
+                }
+            });
+            
+            // Update each subject header with hints
+            currentPuzzle.subjects.forEach((subject, index) => {
+                const header = document.querySelector(`.subject-header[data-subject="${index}"]`);
+                if (header) {
+                    const hintPos = hintPositions[index];
+                    const scrambledName = hintPos !== undefined 
+                        ? scrambleTextWithHint(subject.name, revealProgress / 5, hintPos)
+                        : scrambleText(subject.name, revealProgress / 5);
+                    const spacedName = scrambledName.split('').join(' ');
+                    header.textContent = spacedName;
+                }
+            });
+        }
+        
+        function createDocument(text, answer, factId) {
+            const doc = document.createElement('div');
+            doc.className = 'document';
+            doc.draggable = true;
+            doc.dataset.answer = answer;
+            doc.dataset.factId = factId;
+            
+            // Create text container
+            const textSpan = document.createElement('span');
+            textSpan.textContent = text;
+            doc.appendChild(textSpan);
+            
+            // Create remove button
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-btn';
+            removeBtn.textContent = '×';
+            removeBtn.onclick = (e) => {
+                e.stopPropagation();
+                returnCardToPile(doc);
+            };
+            doc.appendChild(removeBtn);
+            
+            // Desktop drag
+            doc.addEventListener('dragstart', handleDragStart);
+            doc.addEventListener('dragend', handleDragEnd);
+            
+            // Mobile touch
+            doc.addEventListener('touchstart', handleTouchStart, { passive: false });
+            doc.addEventListener('touchmove', handleTouchMove, { passive: false });
+            doc.addEventListener('touchend', handleTouchEnd);
+            
+            // Click/tap selection (works on both desktop and mobile)
+            doc.addEventListener('click', handleCardClick);
+            
+            return doc;
+        }
+        
+        function returnCardToPile(card) {
+            // Remove from slot
+            if (card.parentElement.classList.contains('slot')) {
+                card.parentElement.classList.remove('filled');
+            }
+            
+            // Remove in-slot class and deselect
+            card.classList.remove('in-slot', 'selected');
+            if (selectedCard === card) {
+                selectedCard = null;
+            }
+            
+            // Return to pile
+            const pile = document.getElementById('documentsPile');
+            pile.appendChild(card);
+        }
+        
+        function handleCardClick(e) {
+            e.stopPropagation();
+            const card = e.currentTarget;
+            
+            // If card is in a slot and clicked, return it to pile
+            if (card.parentElement.classList.contains('slot')) {
+                returnCardToPile(card);
+                return;
+            }
+            
+            // If this card is already selected, deselect it
+            if (selectedCard === card) {
+                card.classList.remove('selected');
+                selectedCard = null;
+                return;
+            }
+            
+            // Deselect any previously selected card
+            if (selectedCard) {
+                selectedCard.classList.remove('selected');
+            }
+            
+            // Select this card
+            card.classList.add('selected');
+            selectedCard = card;
+        }
+        
+        function handleDragStart(e) {
+            draggedElement = e.target;
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+        
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+            draggedElement = null;
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            const slot = e.currentTarget;
+            
+            // Different visual feedback if slot is already filled
+            if (slot.classList.contains('filled')) {
+                slot.classList.add('drag-over-filled');
+                slot.classList.remove('drag-over');
+            } else {
+                slot.classList.add('drag-over');
+                slot.classList.remove('drag-over-filled');
+            }
+        }
+        
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over', 'drag-over-filled');
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            const slot = e.currentTarget;
+            slot.classList.remove('drag-over', 'drag-over-filled');
+            
+            if (!draggedElement) return;
+            
+            // If slot already has a card, return it to pile
+            const existingDoc = slot.querySelector('.document');
+            if (existingDoc) {
+                returnCardToPile(existingDoc);
+            }
+            
+            // Remove from old parent
+            if (draggedElement.parentElement.classList.contains('slot')) {
+                draggedElement.parentElement.classList.remove('filled');
+            }
+            
+            // Add to new slot
+            slot.innerHTML = '';
+            slot.appendChild(draggedElement);
+            slot.classList.add('filled');
+            draggedElement.classList.add('in-slot');
+        }
+        
+        // Touch handlers for mobile
+        function handleTouchStart(e) {
+            e.preventDefault();
+            draggedElement = e.target;
+            
+            // Create visual clone
+            touchClone = draggedElement.cloneNode(true);
+            touchClone.style.position = 'fixed';
+            touchClone.style.pointerEvents = 'none';
+            touchClone.style.opacity = '0.8';
+            touchClone.style.zIndex = '10000';
+            document.body.appendChild(touchClone);
+            
+            const touch = e.touches[0];
+            updateTouchClone(touch);
+        }
+        
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (!touchClone) return;
+            
+            const touch = e.touches[0];
+            updateTouchClone(touch);
+        }
+        
+        function updateTouchClone(touch) {
+            if (!touchClone) return;
+            touchClone.style.left = (touch.clientX - touchClone.offsetWidth / 2) + 'px';
+            touchClone.style.top = (touch.clientY - touchClone.offsetHeight / 2) + 'px';
+        }
+        
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            if (!draggedElement || !touchClone) return;
+            
+            const touch = e.changedTouches[0];
+            const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+            const slot = targetElement?.closest('.slot');
+            
+            if (slot && !slot.classList.contains('filled')) {
+                // Remove from old parent
+                if (draggedElement.parentElement.classList.contains('slot')) {
+                    draggedElement.parentElement.classList.remove('filled');
+                }
+                
+                // Add to new slot
+                slot.innerHTML = '';
+                slot.appendChild(draggedElement);
+                slot.classList.add('filled');
+            }
+            
+            // Clean up
+            if (touchClone && touchClone.parentElement) {
+                touchClone.parentElement.removeChild(touchClone);
+            }
+            touchClone = null;
+            draggedElement = null;
+        }
+        
+        function checkAnswers() {
+            if (checksRemaining <= 0) return;
+            
+            checksRemaining--;
+            revealProgress++;
+            
+            // Update check icons
+            const checkIcons = document.querySelectorAll('.check-icon');
+            checkIcons[5 - checksRemaining - 1].classList.add('used');
+            
+            // Reveal more letters
+            updateSubjectNames();
+            
+            // Check each subject
+            let allCorrect = true;
+            currentPuzzle.subjects.forEach((subject, subjectIndex) => {
+                const slots = document.querySelectorAll(`.subject-slots[data-subject="${subjectIndex}"] .slot`);
+                let correctCount = 0;
+                
+                slots.forEach(slot => {
+                    const doc = slot.querySelector('.document');
+                    if (doc && parseInt(doc.dataset.answer) === subjectIndex) {
+                        correctCount++;
+                    }
+                });
+                
+                // Update status
+                const status = document.getElementById(`status${subjectIndex}`);
+                status.textContent = `${correctCount}/3 correct`;
+                status.classList.add('show');
+                
+                if (correctCount === 3) {
+                    status.classList.add('correct');
+                } else {
+                    status.classList.remove('correct');
+                    allCorrect = false;
+                }
+            });
+            
+            // Check for victory
+            if (allCorrect) {
+                // Reveal all names
+                revealProgress = 5;
+                updateSubjectNames();
+                
+                // Launch confetti!
+                launchConfetti();
+                
+                const resultBox = document.getElementById('resultBox');
+                const resultText = document.getElementById('resultText');
+                resultBox.className = 'result-box show victory';
+                resultText.innerHTML = `
+                    <div class="score">🎉 PERFECT! 🎉</div>
+                    <div>ALL FACTS CORRECTLY SORTED!</div>
+                    <div style="margin-top: 10px; font-size: 18px;">CHECKS USED: ${5 - checksRemaining}/5</div>
+                `;
+            } else if (checksRemaining === 0) {
+                // Reveal all names when out of checks
+                revealProgress = 5;
+                updateSubjectNames();
+                
+                const resultBox = document.getElementById('resultBox');
+                const resultText = document.getElementById('resultText');
+                resultBox.className = 'result-box show';
+                resultText.innerHTML = `
+                    <div class="score" style="color: #ff0000;">OUT OF CHECKS!</div>
+                    <div>Keep trying or see the solution:</div>
+                    <button class="btn btn-reveal" id="revealBtn">REVEAL SOLUTION</button>
+                `;
+                
+                // Add event listener to reveal button
+                document.getElementById('revealBtn').addEventListener('click', revealSolution);
+            }
+        }
+        
+        function launchConfetti() {
+            const colors = ['#D4AF37', '#FFD700', '#C0C0C0', '#888888']; // Gold + Silver theme
+            const confettiCount = 100;
+            
+            for (let i = 0; i < confettiCount; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.position = 'fixed';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.top = '-10px'; // Start from top of viewport
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                    confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    document.body.appendChild(confetti);
+                    
+                    // Remove after animation
+                    setTimeout(() => confetti.remove(), 4000);
+                }, i * 30);
+            }
+        }
+        
+        function revealSolution() {
+            // Move all cards to their correct positions
+            currentPuzzle.subjects.forEach((subject, subjectIndex) => {
+                subject.facts.forEach((fact, factIndex) => {
+                    // Find the card with this fact
+                    const allCards = document.querySelectorAll('.document');
+                    allCards.forEach(card => {
+                        if (card.textContent.trim().replace('×', '').trim() === fact.text) {
+                            // Find the correct slot
+                            const slot = document.querySelector(
+                                `.subject-slots[data-subject="${subjectIndex}"] .slot[data-slot="${factIndex}"]`
+                            );
+                            
+                            if (slot) {
+                                // Clear slot if occupied
+                                if (slot.classList.contains('filled')) {
+                                    const existingCard = slot.querySelector('.document');
+                                    if (existingCard) {
+                                        returnCardToPile(existingCard);
+                                    }
+                                }
+                                
+                                // Place card in slot
+                                slot.innerHTML = '';
+                                slot.appendChild(card);
+                                slot.classList.add('filled');
+                                card.classList.add('in-slot');
+                                card.classList.remove('selected');
+                            }
+                        }
+                    });
+                });
+            });
+            
+            // Update all statuses to show correct
+            currentPuzzle.subjects.forEach((subject, subjectIndex) => {
+                const status = document.getElementById(`status${subjectIndex}`);
+                status.textContent = `3/3 correct`;
+                status.classList.add('show', 'correct');
+            });
+            
+            // Update result box
+            const resultBox = document.getElementById('resultBox');
+            const resultText = document.getElementById('resultText');
+            resultBox.className = 'result-box show';
+            resultText.innerHTML = `
+                <div class="score">SOLUTION REVEALED</div>
+                <div>Now you know! Try the next puzzle to test yourself.</div>
+            `;
+        }
+        
+        function resetGame() {
+            initGame(currentPuzzleIndex);
+        }
+        
+        // Event listeners
+        document.getElementById('checkBtn').addEventListener('click', checkAnswers);
+        document.getElementById('resetBtn').addEventListener('click', resetGame);
+        document.getElementById('debugCycle').addEventListener('click', () => {
+            currentPuzzleIndex = (currentPuzzleIndex + 1) % puzzles.length;
+            initGame(currentPuzzleIndex);
+        });
+        
+        // Click on pile area to return selected card
+        document.getElementById('documentsPile').addEventListener('click', (e) => {
+            if (selectedCard && !e.target.classList.contains('document')) {
+                returnCardToPile(selectedCard);
+            }
+        });
+        
+        // Deselect card when clicking outside
+        document.addEventListener('click', (e) => {
+            if (selectedCard && !e.target.closest('.document') && !e.target.closest('.slot')) {
+                selectedCard.classList.remove('selected');
+                selectedCard = null;
+            }
+        });
+        
+        // Initialize on load
+        initGame();
+    </script>
+</body>
+</html>

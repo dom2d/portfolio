@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNCOVER — Weekly Challenge</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #D4AF37;
+    --gold-dim: #B8972E;
+    --gold-bright: #FFD700;
+    --bg: #0a0a0a;
+    --bg2: rgba(255,255,255,0.04);
+    --red: #cc4444;
+    --text: #e8e8e8;
+    --text-dim: #888;
+    --white: #ffffff;
+    --mono: 'DM Mono', monospace;
+    --display: 'Bebas Neue', cursive;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--mono); min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+  .screen { display: none; width: 100%; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+  /* INTRO */
+  #intro { justify-content: center; min-height: 100vh; gap: 22px; padding: 40px 20px; }
+  .title-big { font-family: var(--display); font-size: clamp(52px, 12vw, 84px); letter-spacing: 6px; color: var(--white); text-shadow: 0 0 50px rgba(255,255,255,0.3); line-height: 1; text-align: center; }
+  .title-sub { font-size: 11px; color: var(--text-dim); letter-spacing: 5px; text-align: center; margin-top: 4px; }
+  .week-label { font-size: 13px; color: var(--text-dim); letter-spacing: 3px; text-align: center; margin-top: 8px; }
+  .rules-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 18px 26px; max-width: 420px; width: 100%; line-height: 1.85; }
+  .rules-box p { font-size: 12px; color: #bbb; }
+  .rules-box .lbl { color: var(--text-dim); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+  .btn-primary { background: var(--white); color: var(--bg); border: none; border-radius: 8px; padding: 11px 44px; font-family: var(--display); font-size: 22px; letter-spacing: 3px; cursor: pointer; box-shadow: 0 0 28px rgba(255,255,255,0.3); transition: transform 0.1s; }
+  .btn-primary:hover { transform: translateY(-2px); }
+
+  /* GAME */
+  #game { padding: 10px 14px 48px; min-height: 100vh; }
+  .game-header { width: 100%; max-width: 820px; display: flex; justify-content: space-between; align-items: center; padding: 8px 0 10px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 10px; }
+  .game-logo { font-family: var(--display); font-size: 23px; letter-spacing: 4px; color: var(--white); }
+  .game-theme { font-size: 11px; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+  .game-header-right { display: flex; align-items: center; gap: 12px; }
+  .game-stats { display: flex; gap: 16px; }
+  .header-btn { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--text-dim); border-radius: 6px; width: 32px; height: 32px; font-size: 16px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+  .header-btn:hover { background: rgba(255,255,255,0.1); border-color: var(--white); color: var(--white); }
+  .header-btn svg { width: 16px; height: 16px; }
+  .stat { text-align: center; }
+  .stat-label { font-size: 8px; color: #555; letter-spacing: 2px; text-transform: uppercase; }
+  .stat-val { font-family: var(--display); font-size: 19px; color: var(--text); letter-spacing: 2px; }
+  .budget-wrap { width: 100%; max-width: 820px; margin-bottom: 12px; }
+  .budget-meta { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .budget-label { font-size: 9px; color: #555; letter-spacing: 2px; text-transform: uppercase; }
+  .budget-num { font-family: var(--display); font-size: 14px; letter-spacing: 2px; color: var(--text); }
+  .budget-track { height: 5px; background: rgba(255,255,255,0.07); border-radius: 3px; overflow: hidden; }
+  .budget-fill { height: 100%; border-radius: 3px; transition: width 0.3s ease, background 0.3s; }
+
+  /* Theme Banner */
+  .theme-banner { 
+    width: 100%; 
+    max-width: 820px; 
+    background: linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(255,215,0,0.1) 100%);
+    border: 1px solid var(--gold);
+    border-radius: 10px; 
+    padding: 14px 20px; 
+    margin-bottom: 16px; 
+    text-align: center;
+    box-shadow: 0 0 30px rgba(212,175,55,0.2);
+  }
+  .theme-banner-label { font-size: 9px; color: var(--gold-dim); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 4px; }
+  .theme-banner-title { font-family: var(--display); font-size: 32px; color: var(--gold); letter-spacing: 4px; text-shadow: 0 0 20px rgba(212,175,55,0.5); }
+
+  /* Rounds */
+  .rounds-list { width: 100%; max-width: 820px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 640px) {
+    .rounds-list { grid-template-columns: 1fr; }
+  }
+  .round-row { display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.07); border-radius: 11px; padding: 14px; transition: border-color 0.3s, box-shadow 0.3s; }
+  .round-row.guessed { border-color: var(--gold); box-shadow: 0 0 20px rgba(212,175,55,0.2); }
+  .round-row.rainbow { animation: rainbow-border 3s linear infinite; }
+
+  /* Grid canvas approach */
+  .grid-wrap { position: relative; border-radius: 8px; overflow: hidden; box-shadow: 0 0 20px rgba(255,255,255,0.05), 0 0 0 1.5px rgba(255,255,255,0.1); width: 220px; height: 220px; margin-bottom: 10px; }
+  @media (max-width: 540px) { .grid-wrap { width: 150px; height: 150px; } }
+  .reveal-canvas { position: absolute; top:0; left:0; width:100%; height:100%; display:block; }
+  .tile-canvas { position: absolute; top:0; left:0; width:100%; height:100%; display:block; cursor:pointer; }
+
+  /* Right panel */
+  .round-panel { width: 100%; display: flex; flex-direction: column; gap: 5px; align-items: center; }
+  .round-label { font-size: 10px; color: #666; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 6px; }
+  .coverage-wrap { display:flex; align-items:center; gap:8px; margin-bottom: 8px; width: 100%; max-width: 220px; }
+  .coverage-track { flex:1; height: 3px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden; }
+  .coverage-fill { height: 100%; background: var(--white); border-radius: 2px; transition: width 0.3s; width:0%; }
+  .coverage-label { font-size: 9px; color: #555; letter-spacing: 1px; white-space:nowrap; }
+
+  .guess-label { font-size: 9px; color: var(--text-dim); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 5px; }
+  .guess-select { width: 100%; max-width: 220px; background: var(--bg2); border: 1px solid rgba(255,255,255,0.15); border-radius: 5px; padding: 8px 10px; color: #bbb; font-family: var(--mono); font-size: 11px; cursor: pointer; transition: all 0.15s; }
+  .guess-select:hover { border-color: rgba(255,255,255,0.4); }
+  .guess-select:disabled { cursor: not-allowed; opacity: 0.5; }
+  .guess-select option { background: var(--bg); color: var(--text); }
+  .round-result { font-size: 10px; letter-spacing: 1px; margin-top: 8px; padding: 5px 10px; border-radius: 5px; display: inline-block; }
+  .round-result.correct { color: var(--gold); background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.2); }
+  .round-result.wrong { color: #cc6666; background: rgba(204,68,68,0.06); border: 1px solid rgba(204,68,68,0.15); }
+
+  .check-answers-wrap { width: 100%; max-width: 820px; display: flex; justify-content: center; margin-top: 20px; }
+  .btn-check { background: var(--white); color: var(--bg); border: none; border-radius: 8px; padding: 12px 50px; font-family: var(--display); font-size: 24px; letter-spacing: 3px; cursor: pointer; box-shadow: 0 0 28px rgba(255,255,255,0.2); transition: transform 0.1s; }
+  .btn-check:hover { transform: translateY(-2px); }
+  .btn-check:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
+  .congrats-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10,10,10,0.97); border: 2px solid var(--gold); border-radius: 16px; padding: 40px 50px; text-align: center; z-index: 10000; box-shadow: 0 0 60px rgba(212,175,55,0.5); }
+  .congrats-modal.rainbow { animation: rainbow-border 3s linear infinite; }
+  .congrats-title { font-family: var(--display); font-size: 48px; color: var(--gold); letter-spacing: 6px; margin-bottom: 12px; text-shadow: 0 0 40px rgba(212,175,55,0.7); }
+  .congrats-msg { font-size: 14px; color: #bbb; margin-bottom: 24px; }
+  .btn-share { background: rgba(255,255,255,0.1); color: var(--white); border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 10px 30px; font-family: var(--mono); font-size: 12px; letter-spacing: 2px; cursor: pointer; transition: all 0.2s; }
+  .btn-share:hover { background: rgba(255,255,255,0.2); border-color: var(--white); }
+
+  /* Rainbow animation */
+  @keyframes rainbow-border {
+    0% { border-color: #ff0000; box-shadow: 0 0 20px rgba(255,0,0,0.5); }
+    16% { border-color: #ff8800; box-shadow: 0 0 20px rgba(255,136,0,0.5); }
+    33% { border-color: #ffff00; box-shadow: 0 0 20px rgba(255,255,0,0.5); }
+    50% { border-color: #00ff00; box-shadow: 0 0 20px rgba(0,255,0,0.5); }
+    66% { border-color: #0088ff; box-shadow: 0 0 20px rgba(0,136,255,0.5); }
+    83% { border-color: #8800ff; box-shadow: 0 0 20px rgba(136,0,255,0.5); }
+    100% { border-color: #ff0000; box-shadow: 0 0 20px rgba(255,0,0,0.5); }
+  }
+
+  /* RESULTS */
+  #results { justify-content: center; min-height: 100vh; gap: 22px; padding: 40px 20px; }
+  .results-score-big { font-family: var(--display); font-size: clamp(70px,18vw,106px); color: var(--white); line-height: 1; text-shadow: 0 0 50px rgba(255,255,255,0.3); }
+  .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 390px; width: 100%; }
+  .result-card { border-radius: 8px; padding: 9px 12px; border: 1.5px solid; }
+  .result-card.correct { background: rgba(212,175,55,0.07); border-color: rgba(212,175,55,0.25); }
+  .result-card.correct.rainbow { animation: rainbow-border 3s linear infinite; }
+  .result-card.wrong { background: rgba(204,68,68,0.05); border-color: rgba(204,68,68,0.18); }
+  .rc-round { font-size: 9px; color: #555; letter-spacing: 2px; margin-bottom: 3px; }
+  .rc-name { font-size: 12px; }
+  .rc-name.correct { color: var(--gold); }
+  .rc-name.wrong { color: #cc6666; }
+  .results-mini { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .mini-stat { background: var(--bg2); border: 1px solid rgba(255,255,255,0.06); border-radius: 7px; padding: 8px 16px; text-align: center; min-width: 90px; }
+  .ms-label { font-size: 8px; color: #555; letter-spacing: 2px; text-transform: uppercase; }
+  .ms-val { font-family: var(--display); font-size: 24px; color: var(--text); letter-spacing: 2px; }
+  .btn-outline { background: transparent; color: var(--white); border: 2px solid var(--white); border-radius: 8px; padding: 10px 38px; font-family: var(--display); font-size: 19px; letter-spacing: 3px; cursor: pointer; }
+  .btn-outline:hover { background: rgba(255,255,255,0.07); }
+
+  /* Feedback popup */
+  .feedback-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    background: #111;
+    border: 2px solid var(--white);
+    border-radius: 16px;
+    padding: 30px 40px;
+    text-align: center;
+    z-index: 10000;
+    box-shadow: 0 0 60px rgba(255,255,255,0.2);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  .feedback-popup.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  .feedback-popup.success {
+    border-color: var(--gold);
+    box-shadow: 0 0 60px rgba(212,175,55,0.4);
+    animation: rainbow-border 3s linear infinite;
+  }
+  .feedback-popup.partial {
+    border-color: var(--gold-dim);
+  }
+  .feedback-popup.fail {
+    border-color: var(--red);
+  }
+  .feedback-title {
+    font-family: var(--display);
+    font-size: 36px;
+    letter-spacing: 4px;
+    margin-bottom: 8px;
+  }
+  .feedback-popup.success .feedback-title { color: var(--gold); }
+  .feedback-popup.partial .feedback-title { color: var(--gold-dim); }
+  .feedback-popup.fail .feedback-title { color: var(--red); }
+  .feedback-msg {
+    font-size: 13px;
+    color: #bbb;
+    margin-bottom: 6px;
+  }
+  .feedback-bonus {
+    font-size: 14px;
+    color: var(--gold);
+    margin-top: 10px;
+  }
+  .feedback-attempts {
+    font-size: 11px;
+    color: #666;
+    margin-top: 8px;
+  }
+
+  /* Calendar */
+  .week-row { display: flex; align-items: center; gap: 10px; }
+  .btn-calendar { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--text-dim); border-radius: 6px; padding: 6px 10px; font-size: 16px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+  .btn-calendar:hover { background: rgba(255,255,255,0.1); border-color: var(--white); color: var(--white); }
+  .btn-calendar svg { width: 16px; height: 16px; }
+  
+  .calendar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .calendar-overlay.active { opacity: 1; pointer-events: auto; }
+  
+  .help-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .help-overlay.active { opacity: 1; pointer-events: auto; }
+  
+  .help-modal { background: #111; border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 24px; max-width: 420px; width: 90%; }
+  .help-modal .calendar-header { margin-bottom: 16px; }
+  .help-modal p { font-size: 12px; color: #bbb; line-height: 1.85; margin-bottom: 8px; }
+  
+  .calendar-modal { background: #111; border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 24px; max-width: 360px; width: 90%; max-height: 80vh; overflow-y: auto; }
+  .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .calendar-title { font-family: var(--display); font-size: 24px; color: var(--white); letter-spacing: 3px; }
+  .btn-close { background: transparent; border: none; color: #666; font-size: 24px; cursor: pointer; padding: 4px 8px; line-height: 1; }
+  .btn-close:hover { color: var(--text); }
+  
+  .calendar-list { display: flex; flex-direction: column; gap: 8px; }
+  .calendar-week { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+  .calendar-week:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
+  .calendar-week.current { border-color: var(--gold); background: rgba(212,175,55,0.1); }
+  .calendar-week.future { opacity: 0.6; border-style: dashed; }
+  .calendar-week.future:hover { opacity: 1; }
+  .cw-info { display: flex; flex-direction: column; gap: 2px; }
+  .cw-week { font-size: 14px; color: var(--text); font-weight: 500; }
+  .cw-date { font-size: 11px; color: #666; }
+  .cw-badge { font-size: 9px; padding: 3px 8px; border-radius: 4px; letter-spacing: 1px; text-transform: uppercase; }
+  .cw-badge.current { background: var(--gold); color: var(--bg); }
+  .cw-badge.future { background: rgba(255,255,255,0.1); color: #888; }
+
+  @media (max-width: 540px) {
+    .grid-wrap { width: 150px; height: 150px; }
+    .round-row { gap: 10px; padding: 9px; }
+    .guess-btn { font-size: 10px; padding: 4px 7px; }
+    .theme-banner { padding: 10px 16px; }
+    .theme-banner-title { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- INTRO (hidden, kept for reference) -->
+<div id="intro" class="screen">
+  <div><div class="title-big">UNCOVER</div><div class="title-sub">SCRATCH OFF PIECES TO GUESS WHAT'S HIDDEN!</div></div>
+  <div class="week-row">
+    <div class="week-label" id="week-label">WEEK 1 • JAN 1, 2025</div>
+  </div>
+  <div class="rules-box">
+    <p class="lbl">How to play</p>
+    <p>• Each image is tiled into random polyomino pieces</p>
+    <p>• Hover to highlight a piece, click to remove it and reveal that area</p>
+    <p>• Pieces cost <strong style="color:var(--gold)">1 pt per square</strong> — bigger pieces cost more</p>
+    <p>• You start with <strong style="color:var(--gold)">40 pts</strong> across all 4 images</p>
+    <p>• Make a guess for each image, then click CHECK ANSWERS</p>
+    <p>• Get one wrong? You get <strong style="color:var(--gold)">+15 pts</strong> to keep trying (max 4 attempts)</p>
+  </div>
+  <button class="btn-primary" onclick="startGame()">START GAME</button>
+</div>
+
+<!-- GAME -->
+<div id="game" class="screen active">
+  <div class="game-header">
+    <div>
+      <div class="game-logo">UNCOVER</div>
+      <div class="game-theme" id="game-theme">Theme</div>
+    </div>
+    <div class="game-header-right">
+      <div class="game-stats">
+        <div class="stat"><div class="stat-label">Score</div><div class="stat-val" id="score-disp">0</div></div>
+        <div class="stat"><div class="stat-label">Attempts</div><div class="stat-val" id="attempts-disp">1/4</div></div>
+      </div>
+      <button class="header-btn" onclick="openHelp()" title="How to play">?</button>
+      <button class="header-btn" onclick="openCalendar()" title="Select week">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+  <div class="budget-wrap">
+    <div class="budget-meta">
+      <span class="budget-label">Points Remaining</span>
+      <span class="budget-num" id="budget-num">40 / 40</span>
+    </div>
+    <div class="budget-track"><div class="budget-fill" id="budget-fill" style="width:100%;background:var(--white);"></div></div>
+  </div>
+  <div class="theme-banner">
+    <div class="theme-banner-label">This Week's Theme</div>
+    <div class="theme-banner-title" id="theme-banner-title">Theme</div>
+  </div>
+  <div class="rounds-list" id="rounds-list"></div>
+  <div class="check-answers-wrap">
+    <button class="btn-check" id="check-btn" onclick="checkAllAnswers()">CHECK ANSWERS</button>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div id="results" class="screen">
+  <div><div class="title-sub" style="margin-bottom:4px">FINAL SCORE</div><div class="results-score-big" id="final-score">0</div><div class="title-sub" id="final-sub">out of 4</div></div>
+  <div class="results-grid" id="results-grid"></div>
+  <div class="results-mini">
+    <div class="mini-stat"><div class="ms-label">Attempts</div><div class="ms-val" id="attempts-disp-final">0</div></div>
+    <div class="mini-stat"><div class="ms-label">Pieces Removed</div><div class="ms-val" id="pieces-disp">0</div></div>
+    <div class="mini-stat"><div class="ms-label">Points Left</div><div class="ms-val" id="pts-disp">0</div></div>
+  </div>
+  <button class="btn-outline" onclick="startGame()">PLAY AGAIN</button>
+</div>
+
+<!-- FEEDBACK POPUP -->
+<div class="feedback-popup" id="feedback-popup">
+  <div class="feedback-title" id="feedback-title">NICE!</div>
+  <div class="feedback-msg" id="feedback-msg">You got 3 out of 4 correct!</div>
+  <div class="feedback-bonus" id="feedback-bonus">+15 points to keep trying!</div>
+  <div class="feedback-attempts" id="feedback-attempts">2 attempts remaining</div>
+</div>
+
+<!-- CALENDAR OVERLAY -->
+<div class="calendar-overlay" id="calendar-overlay" onclick="closeCalendar(event)">
+  <div class="calendar-modal" onclick="event.stopPropagation()">
+    <div class="calendar-header">
+      <div class="calendar-title">SELECT WEEK</div>
+      <button class="btn-close" onclick="closeCalendar()">&times;</button>
+    </div>
+    <div class="calendar-list" id="calendar-list"></div>
+  </div>
+</div>
+
+<!-- HELP OVERLAY -->
+<div class="help-overlay" id="help-overlay" onclick="closeHelp(event)">
+  <div class="help-modal" onclick="event.stopPropagation()">
+    <div class="calendar-header">
+      <div class="calendar-title">HOW TO PLAY</div>
+      <button class="btn-close" onclick="closeHelp()">&times;</button>
+    </div>
+    <p>Each image is tiled into random polyomino pieces.</p>
+    <p>Hover to highlight a piece, click to remove it and reveal that area.</p>
+    <p>Pieces cost <strong style="color:var(--gold)">1 pt per square</strong> — bigger pieces cost more.</p>
+    <p>You start with <strong style="color:var(--gold)">40 pts</strong> across all 4 images.</p>
+    <p>Make a guess for each image, then click CHECK ANSWERS.</p>
+    <p>Get one wrong? You get <strong style="color:var(--gold)">+15 pts</strong> to keep trying (max 4 attempts).</p>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// WEEKLY LEVELS - EDIT THIS SECTION TO ADD NEW WEEKS
+// ══════════════════════════════════════════════════════════════════════════════
+// 
+// HOW TO ADD A NEW WEEK:
+// 1. Add your 4 celebrity images to the /images folder
+// 2. Copy the template below and fill in:
+//    - weekStart: The Monday this puzzle goes live (YYYY-MM-DD format)
+//    - images: Array of 4 image filenames in the /images folder
+//    - answers: Array of 4 correct celebrity names (must match an option in "choices")
+//    - choices: Array of 8 names (4 correct + 4 decoys), will be shown alphabetically
+//
+// TEMPLATE:
+// {
+//   weekStart: "2025-01-06",
+//   theme: "Your Theme Here",
+//   folder: "006",
+//   images: ["image1.jpg", "image2.jpg", "image3.jpg", "image4.jpg"],
+//   answers: ["Answer One", "Answer Two", "Answer Three", "Answer Four"],
+//   choices: ["Answer One", "Answer Two", "Answer Three", "Answer Four", 
+//             "Decoy One", "Decoy Two", "Decoy Three", "Decoy Four"]
+// },
+//
+// ══════════════════════════════════════════════════════════════════════════════
+
+const WEEKLY_LEVELS = [
+  // Week 1 - Example (replace with your actual data)
+  {
+    weekStart: "2025-01-06",
+    theme: "Pop Divas",
+    folder: "001",
+    images: ["beyonce.jpg", "oprah.jpg", "taylor.png", "adele.jpg"],
+    answers: ["Beyoncé", "Oprah Winfrey", "Taylor Swift", "Adele"],
+    choices: ["Beyoncé", "Oprah Winfrey", "Taylor Swift", "Adele", 
+              "Rihanna", "Michelle Obama", "Ariana Grande", "Ed Sheeran",
+              "Lady Gaga", "Katy Perry"]
+  },
+  
+  // Week 2
+  {
+    weekStart: "2025-01-13",
+    theme: "Hollywood Icons",
+    folder: "002",
+    images: ["leo.jpg", "brad.jpg", "tom.jpg", "johnny.jpg"],
+    answers: ["Leonardo DiCaprio", "Brad Pitt", "Tom Hanks", "Johnny Depp"],
+    choices: ["Leonardo DiCaprio", "Brad Pitt", "Tom Hanks", "Johnny Depp",
+              "George Clooney", "Matt Damon", "Robert Downey Jr.", "Denzel Washington",
+              "Tom Cruise", "Will Smith"]
+  },
+
+  // Week 3
+  {
+    weekStart: "2025-01-20",
+    theme: "Album Covers",
+    folder: "003",
+    images: ["album_arianagrande.png", "album_blink182.jpg", "album_madonna.jpg", "album_taylorswift.jpg"],
+    answers: ["Ariana Grande", "Blink 182", "Madonna", "Taylor Swift"],
+    choices: ["Ariana Grande", "Blink 182", "Madonna", "Taylor Swift",
+              "Lana Del Rey", "Beyoncé", "Adele", "Amy Winehouse",
+              "Britney Spears", "Katy Perry"]
+  },
+
+  // Week 4
+  {
+    weekStart: "2025-01-27",
+    theme: "Basketball Players",
+    folder: "004",
+    images: ["barkley.jpg", "jordan.jpg", "kareem.jpg", "lebron.jpg"],
+    answers: ["Charles Barkley", "Michael Jordan", "Kareem Abdul-Jabbar", "LeBron James"],
+    choices: ["Charles Barkley", "Michael Jordan", "Kareem Abdul-Jabbar", "LeBron James",
+              "Shaquille O'Neal", "Kobe Bryant", "Magic Johnson", "Larry Bird",
+              "Stephen Curry", "Kevin Durant"]
+  },
+
+  // Week 5
+  {
+    weekStart: "2025-02-03",
+    theme: "Just Some Guys",
+    folder: "005",
+    images: ["armiehammer.jpg", "bieber.jpg", "cavill.jpg", "chalamet.jpg"],
+    answers: ["Armie Hammer", "Justin Bieber", "Henry Cavill", "Timothée Chalamet"],
+    choices: ["Armie Hammer", "Justin Bieber", "Henry Cavill", "Timothée Chalamet",
+              "Chris Hemsworth", "Ryan Gosling", "Tom Holland", "Zac Efron",
+              "Jacob Elordi", "Austin Butler"]
+  },
+
+  // ═══ ADD MORE WEEKS BELOW THIS LINE ═══
+  
+];
+
+// ══════════════════════════════════════════════════════════════════════════════
+// END OF WEEKLY LEVELS SECTION
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Image path configuration
+// Images should be in an "images" folder next to this HTML file
+// e.g., if this file is at /game/uncover.html, images should be at /game/images/
+const IMAGE_FOLDER = "./images/";
+
+// Currently selected week index (null = auto-detect current week)
+let selectedWeekIndex = null;
+
+// Get current week's level
+function getCurrentWeekLevel(weekIndex = null) {
+  const now = new Date();
+  
+  // If specific week requested, use that
+  if (weekIndex !== null && weekIndex >= 0 && weekIndex < WEEKLY_LEVELS.length) {
+    const level = WEEKLY_LEVELS[weekIndex];
+    const weekStart = new Date(level.weekStart + "T00:00:00");
+    return { level, weekNumber: weekIndex + 1, weekStart, weekIndex };
+  }
+  
+  // Find the most recent week that has started
+  let currentLevel = null;
+  let currentWeekStart = null;
+  let currentIndex = 0;
+  
+  for (let i = 0; i < WEEKLY_LEVELS.length; i++) {
+    const level = WEEKLY_LEVELS[i];
+    const weekStart = new Date(level.weekStart + "T00:00:00");
+    if (weekStart <= now) {
+      if (!currentWeekStart || weekStart > currentWeekStart) {
+        currentLevel = level;
+        currentWeekStart = weekStart;
+        currentIndex = i;
+      }
+    }
+  }
+  
+  // If no level found (all are in future), use the first one
+  if (!currentLevel && WEEKLY_LEVELS.length > 0) {
+    currentLevel = WEEKLY_LEVELS[0];
+    currentWeekStart = new Date(currentLevel.weekStart + "T00:00:00");
+    currentIndex = 0;
+  }
+  
+  return { level: currentLevel, weekNumber: currentIndex + 1, weekStart: currentWeekStart, weekIndex: currentIndex };
+}
+
+// Get the "natural" current week (for highlighting in calendar)
+function getNaturalCurrentWeekIndex() {
+  const now = new Date();
+  let currentIndex = 0;
+  let currentWeekStart = null;
+  
+  for (let i = 0; i < WEEKLY_LEVELS.length; i++) {
+    const weekStart = new Date(WEEKLY_LEVELS[i].weekStart + "T00:00:00");
+    if (weekStart <= now) {
+      if (!currentWeekStart || weekStart > currentWeekStart) {
+        currentWeekStart = weekStart;
+        currentIndex = i;
+      }
+    }
+  }
+  
+  return currentIndex;
+}
+
+// Format date for display
+function formatDate(date) {
+  const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", 
+                  "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+  return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+}
+
+// Game data - will be set by loadWeek()
+let CURRENT_LEVEL, WEEK_NUMBER, WEEK_START, CURRENT_WEEK_INDEX, CURRENT_THEME;
+let IMG_SRCS, ROUNDS, ALL_CHOICES;
+
+function loadWeek(weekIndex = null) {
+  selectedWeekIndex = weekIndex;
+  const result = getCurrentWeekLevel(weekIndex);
+  
+  CURRENT_LEVEL = result.level;
+  WEEK_NUMBER = result.weekNumber;
+  WEEK_START = result.weekStart;
+  CURRENT_WEEK_INDEX = result.weekIndex;
+  CURRENT_THEME = CURRENT_LEVEL.theme || "Mystery";
+  
+  // Build game data from current level
+  const folder = CURRENT_LEVEL.folder || "001";
+  IMG_SRCS = CURRENT_LEVEL.images.map(img => `${IMAGE_FOLDER}${folder}/${img}`);
+  ROUNDS = CURRENT_LEVEL.answers.map(answer => ({ correct: answer }));
+  ALL_CHOICES = [...CURRENT_LEVEL.choices].sort();
+  
+  // Update week label
+  document.getElementById('week-label').textContent = 
+    `WEEK ${WEEK_NUMBER} • ${formatDate(WEEK_START)}`;
+}
+
+// Calendar functions
+function openCalendar() {
+  const overlay = document.getElementById('calendar-overlay');
+  const list = document.getElementById('calendar-list');
+  const now = new Date();
+  const naturalCurrentIndex = getNaturalCurrentWeekIndex();
+  
+  list.innerHTML = '';
+  
+  WEEKLY_LEVELS.forEach((level, index) => {
+    const weekStart = new Date(level.weekStart + "T00:00:00");
+    const isFuture = weekStart > now;
+    const isCurrent = index === naturalCurrentIndex;
+    const isSelected = index === CURRENT_WEEK_INDEX;
+    const theme = level.theme || "Mystery";
+    
+    const item = document.createElement('div');
+    item.className = `calendar-week${isCurrent ? ' current' : ''}${isFuture ? ' future' : ''}`;
+    
+    let badge = '';
+    if (isCurrent) {
+      badge = '<span class="cw-badge current">Current</span>';
+    } else if (isFuture) {
+      badge = '<span class="cw-badge future">Future</span>';
+    }
+    
+    item.innerHTML = `
+      <div class="cw-info">
+        <div class="cw-week">Week ${index + 1}: ${theme}</div>
+        <div class="cw-date">${formatDate(weekStart)}</div>
+      </div>
+      ${badge}
+    `;
+    
+    item.addEventListener('click', () => selectWeek(index));
+    list.appendChild(item);
+  });
+  
+  overlay.classList.add('active');
+}
+
+function closeCalendar(event) {
+  if (event && event.target !== event.currentTarget) return;
+  document.getElementById('calendar-overlay').classList.remove('active');
+}
+
+function selectWeek(weekIndex) {
+  closeCalendar();
+  loadWeek(weekIndex);
+  // If game is in progress or on results, restart with new week
+  const gameScreen = document.getElementById('game');
+  const resultsScreen = document.getElementById('results');
+  if (gameScreen.classList.contains('active') || resultsScreen.classList.contains('active')) {
+    startGame();
+  }
+}
+
+// Help modal functions
+function openHelp() {
+  document.getElementById('help-overlay').classList.add('active');
+}
+
+function closeHelp(event) {
+  if (event && event.target !== event.currentTarget) return;
+  document.getElementById('help-overlay').classList.remove('active');
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+  loadWeek(null); // Auto-detect current week
+  startGame(); // Start game immediately
+});
+
+// ── GAME CONFIG ───────────────────────────────────────────────────────────────
+const ROWS = 10, COLS = 10, GRID_PX = 220, MAX_BUDGET = 40;
+const CELL = GRID_PX / COLS; // 22px
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let budget, score, piecesRemoved, guessedCount, attempts;
+let roundStates = [];
+
+// ── POLYOMINO GEN ─────────────────────────────────────────────────────────────
+const SHAPES = [
+  [[0,0],[0,1]],
+  [[0,0],[1,0]],
+  [[0,0],[0,1],[0,2]],
+  [[0,0],[1,0],[2,0]],
+  [[0,0],[0,1],[1,0]],
+  [[0,0],[0,1],[1,1]],
+  [[0,1],[1,0],[1,1]],
+  [[0,0],[1,0],[1,1]],
+  [[0,0],[0,1],[1,0],[1,1]],
+  [[0,0],[0,1],[0,2],[1,1]],
+  [[0,1],[1,0],[1,1],[1,2]],
+  [[0,0],[1,0],[2,0],[2,1]],
+  [[0,0],[0,1],[1,1],[1,2]],
+  [[0,1],[0,2],[1,0],[1,1]],
+];
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function generatePolyominos() {
+  const assign = Array.from({ length: ROWS }, () => Array(COLS).fill(-1));
+  const pieces = [];
+  let pid = 0;
+  
+  function canFit(shape, r, c) {
+    return shape.every(([dr,dc]) => {
+      const nr=r+dr, nc=c+dc;
+      return nr>=0 && nr<ROWS && nc>=0 && nc<COLS && assign[nr][nc]===-1;
+    });
+  }
+  function place(shape, r, c, id) {
+    const cells = [];
+    shape.forEach(([dr,dc]) => {
+      assign[r+dr][c+dc] = id;
+      cells.push([r+dr, c+dc]);
+    });
+    return cells;
+  }
+  
+  const order = [];
+  for (let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) order.push([r,c]);
+  shuffle(order);
+  
+  for (const [r,c] of order) {
+    if (assign[r][c] !== -1) continue;
+    const shuffledShapes = shuffle([...SHAPES]);
+    let placed = false;
+    for (const shape of shuffledShapes) {
+      if (canFit(shape, r, c)) {
+        const cells = place(shape, r, c, pid);
+        pieces.push({ id: pid, cells, size: cells.length });
+        pid++;
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      assign[r][c] = pid;
+      pieces.push({ id: pid, cells: [[r,c]], size: 1 });
+      pid++;
+    }
+  }
+  
+  // Verify all cells assigned
+  for (let r=0; r<ROWS; r++) {
+    for (let c=0; c<COLS; c++) {
+      if (assign[r][c] === -1) {
+        console.warn(`Found unassigned cell at [${r},${c}], creating single-cell piece`);
+        assign[r][c] = pid;
+        pieces.push({ id: pid, cells: [[r,c]], size: 1 });
+        pid++;
+      }
+    }
+  }
+  
+  return pieces;
+}
+
+// ── BUDGET ────────────────────────────────────────────────────────────────────
+function updateBudget() {
+  const pct = (budget / MAX_BUDGET) * 100;
+  document.getElementById('budget-num').textContent = `${budget} / ${MAX_BUDGET}`;
+  const fill = document.getElementById('budget-fill');
+  fill.style.width = pct + '%';
+  fill.style.background = budget < 10 ? 'var(--red)' : 'var(--white)';
+}
+
+// ── BUILD ROUNDS ──────────────────────────────────────────────────────────────
+function buildRounds() {
+  const list = document.getElementById('rounds-list');
+  list.innerHTML = '';
+  
+  ROUNDS.forEach((round, idx) => {
+    const rs = roundStates[idx];
+    const row = document.createElement('div');
+    row.className = 'round-row';
+    row.id = `round-${idx}`;
+    row.innerHTML = `
+      <div class="grid-wrap">
+        <canvas class="reveal-canvas" id="reveal-${idx}" width="220" height="220"></canvas>
+        <canvas class="tile-canvas" id="tile-${idx}" width="220" height="220"></canvas>
+      </div>
+      <div class="round-panel">
+        <div class="round-label">IMAGE ${idx + 1}</div>
+        <div class="coverage-wrap">
+          <div class="coverage-track"><div class="coverage-fill" id="cov-fill-${idx}"></div></div>
+          <div class="coverage-label" id="cov-label-${idx}">0%</div>
+        </div>
+        <div class="guess-label">Your Guess</div>
+        <select class="guess-select" id="guess-${idx}">
+          <option value="" disabled selected>Select your guess...</option>
+        </select>
+        <div id="result-${idx}"></div>
+      </div>
+    `;
+    list.appendChild(row);
+    
+    const select = document.getElementById(`guess-${idx}`);
+    
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = 'Select your guess...';
+    defaultOption.disabled = true;
+    defaultOption.selected = true;
+    select.appendChild(defaultOption);
+    
+    ALL_CHOICES.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      select.appendChild(opt);
+    });
+    
+    initRound(idx);
+  });
+}
+
+function initRound(idx) {
+  const rs = roundStates[idx];
+  const revealCanvas = document.getElementById(`reveal-${idx}`);
+  const tileCanvas = document.getElementById(`tile-${idx}`);
+  const revealCtx = revealCanvas.getContext('2d');
+  const tileCtx = tileCanvas.getContext('2d');
+  
+  rs.revealCtx = revealCtx;
+  rs.tileCtx = tileCtx;
+  
+  // Build cell-to-piece map
+  rs.cellToPiece = {};
+  rs.pieces.forEach(p => {
+    p.cells.forEach(([r,c]) => {
+      rs.cellToPiece[`${r},${c}`] = p;
+    });
+  });
+  
+  // Load image
+  const img = new Image();
+  // Note: crossOrigin removed to allow local file loading
+  img.onload = () => {
+    // Create offscreen
+    const off = document.createElement('canvas');
+    off.width = GRID_PX;
+    off.height = GRID_PX;
+    const offCtx = off.getContext('2d');
+    
+    // Calculate crop to fit (cover) - scale to fill, crop overflow
+    const imgW = img.naturalWidth;
+    const imgH = img.naturalHeight;
+    const imgAspect = imgW / imgH;
+    const canvasAspect = 1; // GRID_PX / GRID_PX = 1 (square)
+    
+    let srcX, srcY, srcW, srcH;
+    
+    if (imgAspect > canvasAspect) {
+      // Image is wider - crop sides
+      srcH = imgH;
+      srcW = imgH * canvasAspect;
+      srcX = (imgW - srcW) / 2;
+      srcY = 0;
+    } else {
+      // Image is taller - crop top/bottom
+      srcW = imgW;
+      srcH = imgW / canvasAspect;
+      srcX = 0;
+      srcY = (imgH - srcH) / 2;
+    }
+    
+    offCtx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, GRID_PX, GRID_PX);
+    rs.offscreen = off;
+    
+    // Initial: black reveal canvas
+    revealCtx.fillStyle = '#1a1a1a';
+    revealCtx.fillRect(0, 0, GRID_PX, GRID_PX);
+    
+    // Draw tiles
+    drawTiles(idx);
+  };
+  img.onerror = (e) => {
+    console.error(`Failed to load image: ${IMG_SRCS[idx]}`);
+    console.error(`Full path attempted: ${img.src}`);
+    console.error(`Make sure the file exists in the images folder next to this HTML file`);
+    // Draw placeholder
+    revealCtx.fillStyle = '#2a2a2a';
+    revealCtx.fillRect(0, 0, GRID_PX, GRID_PX);
+    revealCtx.fillStyle = '#666';
+    revealCtx.font = '12px sans-serif';
+    revealCtx.textAlign = 'center';
+    revealCtx.fillText('Image not found:', GRID_PX/2, GRID_PX/2 - 10);
+    revealCtx.fillText(CURRENT_LEVEL.images[idx], GRID_PX/2, GRID_PX/2 + 10);
+    drawTiles(idx);
+  };
+  img.src = IMG_SRCS[idx];
+  console.log(`Loading image ${idx + 1}: ${IMG_SRCS[idx]}`);
+  
+  // Mouse events
+  let hoveredPiece = null;
+  
+  tileCanvas.addEventListener('mousemove', (e) => {
+    if (rs.guessed && rs.correct) return; // Don't redraw if already revealed
+    
+    const rect = tileCanvas.getBoundingClientRect();
+    const scaleX = GRID_PX / rect.width;
+    const scaleY = GRID_PX / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    const c = Math.floor(x / CELL);
+    const r = Math.floor(y / CELL);
+    
+    const piece = rs.cellToPiece[`${r},${c}`];
+    if (piece && !rs.removed[piece.id]) {
+      if (hoveredPiece !== piece) {
+        hoveredPiece = piece;
+        drawTiles(idx, piece);
+      }
+    } else {
+      if (hoveredPiece) {
+        hoveredPiece = null;
+        drawTiles(idx);
+      }
+    }
+  });
+  
+  tileCanvas.addEventListener('mouseleave', () => {
+    if (rs.guessed && rs.correct) return; // Don't redraw if already revealed
+    hoveredPiece = null;
+    drawTiles(idx);
+  });
+  
+  tileCanvas.addEventListener('click', (e) => {
+    if (rs.guessed) return;
+    
+    const rect = tileCanvas.getBoundingClientRect();
+    const scaleX = GRID_PX / rect.width;
+    const scaleY = GRID_PX / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    const c = Math.floor(x / CELL);
+    const r = Math.floor(y / CELL);
+    
+    const piece = rs.cellToPiece[`${r},${c}`];
+    if (piece && !rs.removed[piece.id]) {
+      if (budget >= piece.size) {
+        budget -= piece.size;
+        piecesRemoved++;
+        rs.removed[piece.id] = true;
+        rs.revealedCells += piece.size;
+        
+        // Reveal cells
+        if (rs.offscreen) {
+          piece.cells.forEach(([pr, pc]) => {
+            rs.revealCtx.drawImage(
+              rs.offscreen,
+              pc * CELL, pr * CELL, CELL, CELL,
+              pc * CELL, pr * CELL, CELL, CELL
+            );
+          });
+        }
+        
+        updateBudget();
+        updateCoverage(idx);
+        hoveredPiece = null;
+        drawTiles(idx);
+      }
+    }
+  });
+}
+
+function drawTiles(idx, hovered = null) {
+  const rs = roundStates[idx];
+  const ctx = rs.tileCtx;
+  ctx.clearRect(0, 0, GRID_PX, GRID_PX);
+  
+  // Greyscale tiles with subtle gradient
+  rs.pieces.forEach(p => {
+    if (rs.removed[p.id]) return;
+    
+    const isHovered = hovered && hovered.id === p.id;
+    
+    p.cells.forEach(([r, c], i) => {
+      const x = c * CELL;
+      const y = r * CELL;
+      
+      if (isHovered) {
+        ctx.fillStyle = '#4a4a4a';
+      } else {
+        // Subtle variation in grey
+        const shade = 25 + (p.id % 10) * 2;
+        ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
+      }
+      ctx.fillRect(x, y, CELL, CELL);
+      
+      // Grid lines
+      ctx.strokeStyle = isHovered ? 'rgba(212,175,55,0.5)' : 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = 0.5;
+      ctx.strokeRect(x, y, CELL, CELL);
+    });
+    
+    // Show cost on hover
+    if (isHovered) {
+      const minR = Math.min(...p.cells.map(c => c[0]));
+      const minC = Math.min(...p.cells.map(c => c[1]));
+      const maxR = Math.max(...p.cells.map(c => c[0]));
+      const maxC = Math.max(...p.cells.map(c => c[1]));
+      const centerX = ((minC + maxC + 1) / 2) * CELL;
+      const centerY = ((minR + maxR + 1) / 2) * CELL;
+      
+      ctx.fillStyle = 'var(--gold)';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`-${p.size}`, centerX, centerY);
+    }
+  });
+}
+
+function updateCoverage(idx) {
+  const rs = roundStates[idx];
+  const pct = Math.round((rs.revealedCells / (ROWS * COLS)) * 100);
+  document.getElementById(`cov-fill-${idx}`).style.width = pct + '%';
+  document.getElementById(`cov-label-${idx}`).textContent = pct + '%';
+}
+
+// ── CHECK ANSWERS ─────────────────────────────────────────────────────────────
+function showFeedbackPopup(correctCount, isGameOver) {
+  const popup = document.getElementById('feedback-popup');
+  const title = document.getElementById('feedback-title');
+  const msg = document.getElementById('feedback-msg');
+  const bonus = document.getElementById('feedback-bonus');
+  const attemptsLeft = document.getElementById('feedback-attempts');
+  
+  const remaining = 4 - attempts;
+  
+  popup.classList.remove('success', 'partial', 'fail');
+  
+  if (correctCount === 4) {
+    popup.classList.add('success');
+    title.textContent = 'PERFECT!';
+    msg.textContent = 'You got all 4 correct!';
+    bonus.style.display = 'none';
+    attemptsLeft.style.display = 'none';
+  } else if (isGameOver) {
+    popup.classList.add('fail');
+    title.textContent = 'GAME OVER';
+    msg.textContent = `You got ${correctCount} out of 4 correct.`;
+    bonus.style.display = 'none';
+    attemptsLeft.style.display = 'none';
+  } else if (correctCount === 0) {
+    popup.classList.add('fail');
+    title.textContent = 'KEEP TRYING!';
+    msg.textContent = 'No correct guesses yet.';
+    bonus.textContent = '+15 points to reveal more!';
+    bonus.style.display = 'block';
+    attemptsLeft.textContent = `${remaining} attempt${remaining === 1 ? '' : 's'} remaining`;
+    attemptsLeft.style.display = 'block';
+  } else {
+    popup.classList.add('partial');
+    title.textContent = correctCount === 3 ? 'SO CLOSE!' : 'GETTING THERE!';
+    msg.textContent = `You got ${correctCount} out of 4 correct.`;
+    bonus.textContent = '+15 points to reveal more!';
+    bonus.style.display = 'block';
+    attemptsLeft.textContent = `${remaining} attempt${remaining === 1 ? '' : 's'} remaining`;
+    attemptsLeft.style.display = 'block';
+  }
+  
+  popup.classList.add('active');
+  
+  // Auto-hide after delay (except for game over states which transition to other screens)
+  const hideDelay = (correctCount === 4 || isGameOver) ? 1500 : 2000;
+  setTimeout(() => {
+    popup.classList.remove('active');
+  }, hideDelay);
+}
+
+function checkAllAnswers() {
+  attempts++;
+  document.getElementById('attempts-disp').textContent = `${attempts}/4`;
+  
+  let allCorrect = true;
+  let correctCount = 0;
+  
+  roundStates.forEach((rs, idx) => {
+    if (rs.correct) {
+      correctCount++;
+      return; // Already correct
+    }
+    
+    const select = document.getElementById(`guess-${idx}`);
+    const guess = select.value;
+    const resultDiv = document.getElementById(`result-${idx}`);
+    const round = ROUNDS[idx];
+    
+    if (guess === round.correct) {
+      rs.correct = true;
+      rs.guessed = true;
+      score++;
+      correctCount++;
+      select.disabled = true;
+      document.getElementById(`round-${idx}`).classList.add('guessed');
+      document.getElementById(`round-${idx}`).classList.add('rainbow');
+      
+      // Reveal full image
+      if (rs.offscreen) {
+        rs.revealCtx.drawImage(rs.offscreen, 0, 0);
+        rs.tileCtx.clearRect(0, 0, GRID_PX, GRID_PX);
+      }
+      
+      resultDiv.innerHTML = `<div class="round-result correct">✓ Correct!</div>`;
+    } else {
+      allCorrect = false;
+      // Keep dropdown enabled for retry
+      resultDiv.innerHTML = `<div class="round-result wrong">✗ Try again</div>`;
+    }
+  });
+  
+  document.getElementById('score-disp').textContent = score;
+  
+  // If all 4 correct, show popup then confetti
+  if (allCorrect) {
+    document.getElementById('check-btn').disabled = true;
+    showFeedbackPopup(4, false);
+    setTimeout(() => showConfetti(), 1800);
+    return;
+  }
+  
+  // If max attempts reached, game over
+  if (attempts >= 4) {
+    document.getElementById('check-btn').disabled = true;
+    showFeedbackPopup(correctCount, true);
+    setTimeout(() => showResults(), 2000);
+    return;
+  }
+  
+  // Show feedback popup
+  showFeedbackPopup(correctCount, false);
+  
+  // Give bonus points for next attempt
+  budget += 15;
+  updateBudget();
+  
+  // Update button text
+  const checkBtn = document.getElementById('check-btn');
+  checkBtn.textContent = 'TRY AGAIN';
+  setTimeout(() => {
+    checkBtn.textContent = 'CHECK ANSWERS';
+  }, 2500);
+}
+
+function showConfetti() {
+  // Create confetti canvas
+  const canvas = document.createElement('canvas');
+  canvas.className = 'confetti-canvas';
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  
+  const ctx = canvas.getContext('2d');
+  const particles = [];
+  
+  // Create confetti particles (gold + silver theme)
+  for (let i = 0; i < 150; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height - canvas.height,
+      vx: (Math.random() - 0.5) * 3,
+      vy: Math.random() * 3 + 2,
+      color: ['#ff0000', '#ff8800', '#ffff00', '#00ff00', '#0088ff', '#8800ff'][Math.floor(Math.random() * 6)],
+      size: Math.random() * 8 + 4,
+      rotation: Math.random() * 360,
+      rotationSpeed: (Math.random() - 0.5) * 10
+    });
+  }
+  
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rotation += p.rotationSpeed;
+      p.vy += 0.1; // gravity
+      
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation * Math.PI / 180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+      ctx.restore();
+    });
+    
+    if (particles.some(p => p.y < canvas.height)) {
+      requestAnimationFrame(animate);
+    }
+  }
+  
+  animate();
+  
+  // Show congrats modal
+  const modal = document.createElement('div');
+  modal.className = 'congrats-modal rainbow';
+  modal.innerHTML = `
+    <div class="congrats-title">PERFECT!</div>
+    <div class="congrats-msg">You got all 4 correct in ${attempts} attempt${attempts === 1 ? '' : 's'}!</div>
+    <button class="btn-share" onclick="shareResults()">SHARE RESULT</button>
+  `;
+  document.body.appendChild(modal);
+  
+  // Remove after 5 seconds and go to results
+  setTimeout(() => {
+    canvas.remove();
+    modal.remove();
+    showResults();
+  }, 5000);
+}
+
+function shareResults() {
+  const status = score === 4 ? "SUCCESS" : "FAILED";
+  const text = `I played UNCOVER this week! The theme was ${CURRENT_THEME}...\n${status} in ${attempts} attempt${attempts === 1 ? '' : 's'}!\n\nPlay at: dom2d.com/hub.html`;
+  if (navigator.share) {
+    navigator.share({ text });
+  } else {
+    navigator.clipboard.writeText(text);
+    alert('Result copied to clipboard!');
+  }
+}
+
+// ── START ─────────────────────────────────────────────────────────────────────
+function startGame() {
+  budget = MAX_BUDGET; score = 0; piecesRemoved = 0; guessedCount = 0; attempts = 0;
+
+  roundStates = ROUNDS.map(() => ({
+    pieces: generatePolyominos(),
+    removed: {},
+    revealedCells: 0,
+    guessed: false,
+    correct: false,
+    offscreen: null,
+    tileCtx: null,
+    revealCtx: null,
+    cellToPiece: {},
+  }));
+
+  showScreen('game');
+  document.getElementById('score-disp').textContent = '0';
+  document.getElementById('attempts-disp').textContent = '0/4';
+  document.getElementById('game-theme').textContent = CURRENT_THEME;
+  document.getElementById('theme-banner-title').textContent = CURRENT_THEME;
+  document.getElementById('check-btn').disabled = false;
+  document.getElementById('check-btn').textContent = 'CHECK ANSWERS';
+  updateBudget();
+  buildRounds();
+}
+
+function showResults() {
+  showScreen('results');
+  document.getElementById('final-score').textContent = score;
+  document.getElementById('attempts-disp-final').textContent = attempts;
+  document.getElementById('pieces-disp').textContent = piecesRemoved;
+  document.getElementById('pts-disp').textContent = budget;
+  const grid = document.getElementById('results-grid');
+  grid.innerHTML = '';
+  const allCorrect = score === 4;
+  roundStates.forEach((rs, i) => {
+    const card = document.createElement('div');
+    card.className = `result-card ${rs.correct?'correct':'wrong'}${rs.correct && allCorrect ? ' rainbow' : ''}`;
+    card.innerHTML = `<div class="rc-round">ROUND ${i+1}</div><div class="rc-name ${rs.correct?'correct':'wrong'}">${rs.correct?'✓':'✗'} ${ROUNDS[i].correct}</div>`;
+    grid.appendChild(card);
+  });
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+</script>
+</body>
+</html>

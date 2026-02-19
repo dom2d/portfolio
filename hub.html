@@ -1,580 +1,554 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GALAXY BRAIN - Game Hub</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Galaxy Brain — DOM2D</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  :root {
+    --bg: #0a0a0a;
+    --bg2: rgba(255,255,255,0.04);
+    --text: #e8e8e8;
+    --text-dim: #888;
+    --border: rgba(255,255,255,0.1);
+    --border-hover: rgba(255,255,255,0.25);
+    --red: #cc4444;
+    --mono: 'DM Mono', monospace;
+    --display: 'Bebas Neue', cursive;
+  }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 20px 80px;
+    position: relative;
+  }
 
-        :root {
-            --bg-space: #0a0a0a;
-            --bg-card: #1a1a1a;
-            --gold: #d4af37;
-            --gold-glow: rgba(212, 175, 55, 0.3);
-            --text-primary: #ffffff;
-            --text-secondary: #999999;
-            --border: #333333;
-        }
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 920px;
+  }
 
-        @keyframes starfield {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-100vh); }
-        }
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 0.8; }
-            50% { opacity: 1; }
-        }
+  .logo-image {
+    width: 180px;
+    height: auto;
+    margin-bottom: 16px;
+    opacity: 0.95;
+  }
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
+  .logo {
+    font-family: var(--display);
+    font-size: clamp(52px, 12vw, 84px);
+    color: var(--text);
+    letter-spacing: 6px;
+    margin-bottom: 8px;
+    line-height: 1;
+    font-weight: 400;
+  }
 
-        @keyframes glow {
-            0%, 100% { box-shadow: 0 0 20px var(--card-glow); }
-            50% { box-shadow: 0 0 40px var(--card-glow), 0 0 60px var(--card-glow); }
-        }
+  .tagline {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    opacity: 0.9;
+  }
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-space);
-            color: var(--text-primary);
-            min-height: 100vh;
-            overflow-x: hidden;
-            position: relative;
-        }
+  /* Countdown timer */
+  .countdown-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 26px;
+    margin-bottom: 32px;
+    text-align: center;
+  }
 
-        /* Starfield Background */
-        .stars {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 200%;
-            height: 200vh;
-            pointer-events: none;
-            z-index: 0;
-        }
+  .countdown-label {
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
 
-        .star {
-            position: absolute;
-            background: white;
-            border-radius: 50%;
-            animation: starfield 80s linear infinite;
-        }
+  .countdown-timer {
+    font-family: var(--display);
+    font-size: 36px;
+    color: var(--text);
+    letter-spacing: 4px;
+  }
 
-        .star.small {
-            width: 1px;
-            height: 1px;
-            opacity: 0.4;
-        }
+  /* Info box */
+  .info-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 26px;
+    margin-bottom: 48px;
+    line-height: 1.85;
+  }
 
-        .star.medium {
-            width: 2px;
-            height: 2px;
-            opacity: 0.6;
-        }
+  .info-box p {
+    font-size: 12px;
+    color: #bbb;
+    margin-bottom: 12px;
+  }
 
-        .star.large {
-            width: 3px;
-            height: 3px;
-            opacity: 0.8;
-            animation: starfield 80s linear infinite, pulse 3s ease-in-out infinite;
-        }
+  .info-box p:last-child {
+    margin-bottom: 0;
+  }
 
-        /* Gradient Overlay */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(ellipse at 50% 20%, rgba(212, 175, 55, 0.08), transparent 60%);
-            pointer-events: none;
-            z-index: 1;
-        }
+  .info-label {
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: block;
+  }
 
-        .container {
-            position: relative;
-            z-index: 2;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 1.5rem 1rem;
-            min-height: 100vh;
-        }
+  /* Games grid */
+  .games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 48px;
+  }
 
-        /* Header */
-        header {
-            text-align: center;
-            margin-bottom: 2rem;
-            animation: float 6s ease-in-out infinite;
-        }
+  .game-card {
+    background: rgba(255,255,255,0.015);
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 20px;
+    transition: all 0.3s;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+    position: relative;
+  }
 
-        .logo {
-            font-family: 'Inter', sans-serif;
-            font-size: clamp(2.5rem, 8vw, 5rem);
-            font-weight: 800;
-            letter-spacing: 0.15em;
-            background: linear-gradient(135deg, #ffffff, var(--gold), #ffffff);
-            background-size: 200% 200%;
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: gradient-shift 8s ease infinite;
-            margin-bottom: 0;
-        }
+  .game-card:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-3px);
+    box-shadow: 0 0 20px rgba(255,255,255,0.05);
+  }
 
-        @keyframes gradient-shift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
+  .game-card:active {
+    transform: translateY(-1px);
+  }
 
-        /* Games Grid */
-        .games-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 1.25rem;
-            margin-bottom: 2rem;
-        }
+  /* Completion checkmark */
+  .completion-check {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    opacity: 0;
+    transition: all 0.3s;
+  }
 
-        .game-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.25rem;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
+  .completion-check.completed {
+    opacity: 1;
+    background: rgba(255,255,255,0.15);
+    border-color: var(--text);
+  }
 
-        .game-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, transparent, rgba(212, 175, 55, 0.05));
-            opacity: 0;
-            transition: opacity 0.4s;
-        }
+  .game-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 12px;
+    object-fit: contain;
+    opacity: 0.9;
+    transition: opacity 0.3s;
+  }
 
-        .game-card:hover {
-            transform: translateY(-8px);
-            border-color: var(--gold);
-            box-shadow: 0 8px 40px var(--gold-glow);
-        }
+  .game-card:hover .game-icon {
+    opacity: 1;
+  }
 
-        .game-card:hover::before {
-            opacity: 1;
-        }
+  .game-day {
+    font-size: 9px;
+    color: #555;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
 
-        .game-icon {
-            font-size: 3rem;
-            margin-bottom: 0.75rem;
-            display: block;
-            filter: grayscale(0.3);
-        }
+  .game-name {
+    font-family: var(--display);
+    font-size: 28px;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+    line-height: 1.1;
+  }
 
-        .game-title {
-            font-family: 'Inter', sans-serif;
-            font-size: 1.5rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
+  /* Game-specific colors */
+  .game-card[data-game="werewolf"] .game-name       { color: #c93a3a; }
+  .game-card[data-game="folderdle"] .game-name      { color: #008080; }
+  .game-card[data-game="caveman"] .game-name        { color: #cc5500; }
+  .game-card[data-game="nerdstack"] .game-name      { color: #d4af37; }
+  .game-card[data-game="mathemagical"] .game-name   { color: #2d6e4a; }
+  .game-card[data-game="memori"] .game-name         { color: #e74c3c; }
+  .game-card[data-game="faceoff"] .game-name        { color: #9b59b6; }
+  .game-card[data-game="scratchoff"] .game-name     { color: #e67e22; }
+  .game-card[data-game="guesswhat"] .game-name      { color: #5ba3d0; }
 
-        .game-description {
-            color: var(--text-secondary);
-            line-height: 1.5;
-            margin-bottom: 1rem;
-            font-size: 0.95rem;
-        }
+  .game-desc {
+    font-size: 11px;
+    color: #888;
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
 
-        .game-meta {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin-bottom: 1rem;
-        }
+  .game-status {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
 
-        .meta-tag {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 0.25rem 0.6rem;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            font-weight: 600;
-        }
+  .badge {
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 4px 9px;
+    border-radius: 5px;
+    text-transform: uppercase;
+  }
 
-        .play-button {
-            background: var(--gold);
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 6px;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: #000000;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            transition: all 0.3s;
-            width: 100%;
-            position: relative;
-            overflow: hidden;
-        }
+  .badge.new {
+    color: var(--text);
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--border);
+  }
 
-        .play-button::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.3);
-            transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s;
-        }
+  /* Footer */
+  footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(10,10,10,0.95);
+    border-top: 1px solid var(--border);
+    padding: 16px 20px;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
 
-        .play-button:hover::before {
-            width: 300px;
-            height: 300px;
-        }
+  .footer-content {
+    max-width: 920px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
 
-        .play-button:hover {
-            transform: scale(1.03);
-            box-shadow: 0 4px 20px var(--gold-glow);
-        }
+  .footer-stats {
+    display: flex;
+    gap: 20px;
+  }
 
-        /* Custom button colors for each game */
-        .game-card[data-game="werewolf"] .play-button {
-            background: #c93a3a;
-        }
+  .stat {
+    text-align: center;
+  }
 
-        .game-card[data-game="werewolf"] .play-button:hover {
-            box-shadow: 0 4px 20px rgba(201, 58, 58, 0.4);
-        }
+  .stat-label {
+    font-size: 8px;
+    color: #444;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: block;
+  }
 
-        .game-card[data-game="folderdle"] .play-button {
-            background: #008080;
-        }
+  .stat-val {
+    font-family: var(--display);
+    font-size: 19px;
+    color: var(--text);
+    letter-spacing: 2px;
+  }
 
-        .game-card[data-game="folderdle"] .play-button:hover {
-            box-shadow: 0 4px 20px rgba(0, 128, 128, 0.4);
-        }
+  .footer-link {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
 
-        .game-card[data-game="caveman"] .play-button {
-            background: #cc5500;
-        }
+  .footer-link:hover {
+    opacity: 1;
+  }
 
-        .game-card[data-game="caveman"] .play-button:hover {
-            box-shadow: 0 4px 20px rgba(204, 85, 0, 0.4);
-        }
+  /* Responsive */
+  @media (max-width: 640px) {
+    .games-grid {
+      grid-template-columns: 1fr;
+    }
 
-        .game-card[data-game="nerdstack"] .play-button {
-            background: var(--gold);
-        }
+    .logo {
+      font-size: 48px;
+    }
 
-        .game-card[data-game="nerdstack"] .play-button:hover {
-            box-shadow: 0 4px 20px var(--gold-glow);
-        }
+    .tagline {
+      font-size: 10px;
+      letter-spacing: 3px;
+    }
 
-        .game-card[data-game="mathemagical"] .play-button {
-            background: #2d6e4a;
-        }
-
-        .game-card[data-game="mathemagical"] .play-button:hover {
-            box-shadow: 0 4px 20px rgba(45, 110, 74, 0.4);
-        }
-
-        .game-card[data-game="combomaster"] .play-button {
-            background: #7b4db8;
-        }
-
-        .game-card[data-game="combomaster"] .play-button:hover {
-            box-shadow: 0 4px 20px rgba(123, 77, 184, 0.4);
-        }
-
-        .game-card[data-game="pickwho"] .play-button {
-            background: #5ba3d0;
-        }
-
-        .game-card[data-game="pickwho"] .play-button:hover {
-            box-shadow: 0 4px 20px rgba(91, 163, 208, 0.4);
-        }
-
-        /* Coming Soon Cards */
-        .game-card.coming-soon {
-            opacity: 0.6;
-            cursor: default;
-        }
-
-        .game-card.coming-soon:hover {
-            transform: none;
-            box-shadow: none;
-        }
-
-        .coming-soon-label {
-            background: transparent;
-            border: 1px dashed rgba(255, 255, 255, 0.2);
-            padding: 0.75rem 1.5rem;
-            border-radius: 6px;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            width: 100%;
-            text-align: center;
-        }
-
-        /* Footer */
-        footer {
-            text-align: center;
-            padding: 1.5rem 0;
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            letter-spacing: 0.05em;
-        }
-
-        .footer-stats {
-            display: flex;
-            justify-content: center;
-            gap: 2.5rem;
-            flex-wrap: wrap;
-        }
-
-        .stat {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .stat-number {
-            font-family: 'Inter', sans-serif;
-            font-size: 1.75rem;
-            font-weight: 800;
-            color: var(--gold);
-        }
-
-        .stat-label {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            font-weight: 600;
-            letter-spacing: 0.1em;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .container {
-                padding: 1rem 0.75rem;
-            }
-
-            .games-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-
-            .footer-stats {
-                gap: 2rem;
-            }
-        }
-    </style>
+    .footer-content {
+      flex-direction: column;
+      text-align: center;
+    }
+  }
+</style>
 </head>
 <body>
-    <!-- Starfield Background -->
-    <div class="stars" id="starfield"></div>
 
-    <div class="container">
-        <header>
-            <h1 class="logo">GALAXY BRAIN</h1>
-        </header>
+<div class="container">
+  <header>
+    <img src="galaxybrain.png" alt="Galaxy Brain" class="logo-image">
+    <h1 class="logo">GALAXY BRAIN</h1>
+    <p class="tagline">Weekly Puzzles and Trivia</p>
+  </header>
 
-        <div class="games-grid">
-            <!-- Werewolf Daily -->
-            <div class="game-card" data-game="werewolf">
-                <span class="game-icon">🌙</span>
-                <h2 class="game-title">Werewolf Daily</h2>
-                <p class="game-description">
-                    Unravel the mystery. Read villagers' testimonies and deduce who among them is the werewolf.
-                </p>
-                <div class="game-meta">
-                    <span class="meta-tag">Logic</span>
-                    <span class="meta-tag">Deduction</span>
-                    <span class="meta-tag">Daily</span>
-                </div>
-                <button class="play-button" onclick="playGame('werewolf.html')">Launch Game</button>
-            </div>
+  <div class="countdown-box">
+    <div class="countdown-label">Next Week in</div>
+    <div class="countdown-timer" id="countdown">--:--:--</div>
+  </div>
 
-            <!-- FOLDERDLE -->
-            <div class="game-card" data-game="folderdle">
-                <span class="game-icon">📁</span>
-                <h2 class="game-title">FOLDERDLE</h2>
-                <p class="game-description">
-                    Navigate the retro file system. Organize folders in the right order before time runs out.
-                </p>
-                <div class="game-meta">
-                    <span class="meta-tag">Puzzle</span>
-                    <span class="meta-tag">Retro</span>
-                    <span class="meta-tag">Daily</span>
-                </div>
-                <button class="play-button" onclick="playGame('folder.html')">Launch Game</button>
-            </div>
+  <div class="info-box">
+    <span class="info-label">About</span>
+    <p>Nine logic puzzles and trivia games. A fresh set drops every Sunday at midnight. Complete all nine for the weekly perfect score.</p>
+    <p>All games are free, ad-free, and require only thinking — no accounts, no tracking, just puzzles.</p>
+  </div>
 
-            <!-- Caveman Movies -->
-            <div class="game-card" data-game="caveman">
-                <span class="game-icon">🦴</span>
-                <h2 class="game-title">Caveman Movies</h2>
-                <p class="game-description">
-                    Guess the movie from primitive cave drawings. How cultured is your prehistoric brain?
-                </p>
-                <div class="game-meta">
-                    <span class="meta-tag">Movies</span>
-                    <span class="meta-tag">Guessing</span>
-                    <span class="meta-tag">Daily</span>
-                </div>
-                <button class="play-button" onclick="playGame('caveman.html')">Launch Game</button>
-            </div>
+  <div class="games-grid">
+    
+    <a href="/werewolf/werewolf.html" class="game-card" data-game="werewolf">
+      <div class="completion-check" id="check-werewolf"></div>
+      <img src="werewolf.png" alt="Werewolf Daily" class="game-icon">
+      <div class="game-name">WEREWOLF DAILY</div>
+      <div class="game-desc">Identify the liars among villagers using logic deduction. Werewolves always lie, villagers always tell the truth.</div>
+    </a>
 
-            <!-- NERDSTACK -->
-            <div class="game-card" data-game="nerdstack">
-                <span class="game-icon">⚡</span>
-                <h2 class="game-title">NERDSTACK</h2>
-                <p class="game-description">
-                    Build the ultimate tech stack. Rank programming languages, frameworks, and tools by popularity.
-                </p>
-                <div class="game-meta">
-                    <span class="meta-tag">Tech</span>
-                    <span class="meta-tag">Ranking</span>
-                    <span class="meta-tag">Daily</span>
-                </div>
-                <button class="play-button" onclick="playGame('stack.html')">Launch Game</button>
-            </div>
+    <a href="/folder/folder.html" class="game-card" data-game="folderdle">
+      <div class="completion-check" id="check-folderdle"></div>
+      <img src="folderdle.png" alt="Folderdle" class="game-icon">
+      <div class="game-name">FOLDERDLE</div>
+      <div class="game-desc">Organize files into folders based on patterns and clues. Use logic to infer the categorization rules.</div>
+    </a>
 
-            <!-- COMBOMASTER -->
-            <div class="game-card" data-game="combomaster">
-                <span class="game-icon">🃏</span>
-                <h2 class="game-title">COMBOMASTER</h2>
-                <p class="game-description">
-                    Master the cards. Find matching combinations and clear the deck with strategic moves.
-                </p>
-                <div class="game-meta">
-                    <span class="meta-tag">Cards</span>
-                    <span class="meta-tag">Combos</span>
-                    <span class="meta-tag">Daily</span>
-                </div>
-                <button class="play-button" onclick="playGame('combo.html')">Launch Game</button>
-            </div>
+    <a href="/caveman/caveman.html" class="game-card" data-game="caveman">
+      <div class="completion-check" id="check-caveman"></div>
+      <img src="caveman.png" alt="Caveman Movies" class="game-icon">
+      <div class="game-name">CAVEMAN MOVIES</div>
+      <div class="game-desc">Decode movie titles from caveman-speak. Pure pattern recognition and cultural knowledge.</div>
+    </a>
 
-            <!-- MATHEMAGICAL -->
-            <div class="game-card" data-game="mathemagical">
-                <span class="game-icon">✨</span>
-                <h2 class="game-title">MATHEMAGICAL</h2>
-                <p class="game-description">
-                    Conjure the target number. Use mathematical operations to reach your goal like magic.
-                </p>
-                <div class="game-meta">
-                    <span class="meta-tag">Math</span>
-                    <span class="meta-tag">Puzzle</span>
-                    <span class="meta-tag">Daily</span>
-                </div>
-                <button class="play-button" onclick="playGame('mathemagical.html')">Launch Game</button>
-            </div>
+    <a href="/stack/stack.html" class="game-card" data-game="nerdstack">
+      <div class="completion-check" id="check-nerdstack"></div>
+      <img src="nerdstack.png" alt="Nerdstack" class="game-icon">
+      <div class="game-name">NERDSTACK</div>
+      <div class="game-desc">Stack knowledge across science, tech, and culture. Connect concepts in layered trivia challenges.</div>
+    </a>
 
-            <!-- PICK WHO -->
-            <div class="game-card" data-game="pickwho">
-                <span class="game-icon">🎭</span>
-                <h2 class="game-title">PICK WHO?</h2>
-                <p class="game-description">
-                    Guess the mystery celebrity. Ask yes/no questions to narrow down and identify the face.
-                </p>
-                <div class="game-meta">
-                    <span class="meta-tag">Deduction</span>
-                    <span class="meta-tag">Celebrity</span>
-                    <span class="meta-tag">Daily</span>
-                </div>
-                <button class="play-button" onclick="playGame('who.html')">Launch Game</button>
-            </div>
-        </div>
+    <a href="/cardgrid/cardgrid.html" class="game-card" data-game="mathemagical">
+      <div class="completion-check" id="check-mathemagical"></div>
+      <img src="mathemagical.png" alt="Mathemagical" class="game-icon">
+      <div class="game-name">MATHEMAGICAL</div>
+      <div class="game-desc">Arrange playing cards in a 3×3 grid where every clue is satisfied. Pure logical deduction.</div>
+    </a>
 
-        <footer>
-            <div class="footer-stats">
-                <div class="stat">
-                    <div class="stat-number">7</div>
-                    <div class="stat-label">Games Live</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number">∞</div>
-                    <div class="stat-label">Possibilities</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number">24/7</div>
-                    <div class="stat-label">Brain Power</div>
-                </div>
-            </div>
-        </footer>
+    <a href="/memory/memory.html" class="game-card" data-game="memori">
+      <div class="completion-check" id="check-memori"></div>
+      <img src="memori.png" alt="Memori" class="game-icon">
+      <div class="game-name">MEMORI</div>
+      <div class="game-desc">Match pairs while racing the clock. Memory meets strategy as difficulty scales with progress.</div>
+    </a>
+
+    <a href="/faceoff/faceoff.html" class="game-card" data-game="faceoff">
+      <div class="completion-check" id="check-faceoff"></div>
+      <img src="faceoff.png" alt="Faceoff" class="game-icon">
+      <div class="game-name">FACEOFF</div>
+      <div class="game-desc">Find the henchmen and villain aliens based on clues about their appearance. A logic visual puzzle.</div>
+    </a>
+
+    <a href="/uncover/uncover.html" class="game-card" data-game="scratchoff">
+      <div class="completion-check" id="check-scratchoff"></div>
+      <img src="scratchoff.png" alt="Scratch Off" class="game-icon">
+      <div class="game-name">SCRATCH OFF</div>
+      <div class="game-desc">Spend points to scratch off parts of four images, and guess what is hidden!</div>
+    </a>
+
+    <a href="/guesswhat/guesswhat.html" class="game-card" data-game="guesswhat">
+      <div class="completion-check" id="check-guesswhat"></div>
+      <img src="guesswhat.png" alt="Guess What" class="game-icon">
+      <div class="game-name">GUESS WHAT?</div>
+      <div class="game-desc">Deduce the mystery person, place, or thing from minimal clues. Use logic to narrow possibilities.</div>
+    </a>
+
+  </div>
+</div>
+
+<footer>
+  <div class="footer-content">
+    <div class="footer-stats">
+      <div class="stat">
+        <span class="stat-label">Week</span>
+        <span class="stat-val" id="weekNumber">--</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Completed</span>
+        <span class="stat-val" id="completedCount">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Streak</span>
+        <span class="stat-val" id="streakCount">0</span>
+      </div>
     </div>
+    <div class="footer-link">
+      DOM2D © 2026
+    </div>
+  </div>
+</footer>
 
-    <script>
-        // Generate starfield
-        function createStarfield() {
-            const starfield = document.getElementById('starfield');
-            const starCount = 200;
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+// WEEK CALCULATION
+// ═══════════════════════════════════════════════════════════════════════
+function getWeekNumber() {
+  const today = new Date();
+  const epoch = new Date('2024-01-01');
+  const diffDays = Math.floor((today - epoch) / 86400000);
+  return Math.floor(diffDays / 7) + 1;
+}
 
-            for (let i = 0; i < starCount; i++) {
-                const star = document.createElement('div');
-                const size = Math.random();
-                
-                if (size < 0.6) {
-                    star.className = 'star small';
-                } else if (size < 0.9) {
-                    star.className = 'star medium';
-                } else {
-                    star.className = 'star large';
-                }
+function getNextSunday() {
+  const now = new Date();
+  const day = now.getDay(); // 0=Sunday, 1=Monday, etc.
+  const daysUntilSunday = day === 0 ? 7 : (7 - day);
+  const nextSunday = new Date(now);
+  nextSunday.setDate(now.getDate() + daysUntilSunday);
+  nextSunday.setHours(0, 0, 0, 0);
+  return nextSunday;
+}
 
-                star.style.left = Math.random() * 100 + '%';
-                star.style.top = Math.random() * 200 + 'vh';
-                star.style.animationDelay = -Math.random() * 80 + 's';
-                
-                starfield.appendChild(star);
-            }
-        }
+// ═══════════════════════════════════════════════════════════════════════
+// COUNTDOWN TIMER
+// ═══════════════════════════════════════════════════════════════════════
+function updateCountdown() {
+  const now = new Date();
+  const target = getNextSunday();
+  const diff = target - now;
 
-        // Play game function
-        function playGame(filename) {
-            window.location.href = filename;
-        }
+  if (diff <= 0) {
+    document.getElementById('countdown').textContent = '00:00:00';
+    return;
+  }
 
-        // Initialize
-        createStarfield();
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-        // Add subtle parallax effect on mouse move
-        document.addEventListener('mousemove', (e) => {
-            const stars = document.querySelectorAll('.star');
-            const moveX = (e.clientX - window.innerWidth / 2) * 0.01;
-            const moveY = (e.clientY - window.innerHeight / 2) * 0.01;
-            
-            stars.forEach((star, index) => {
-                const depth = index % 3 + 1;
-                star.style.transform = `translate(${moveX * depth}px, ${moveY * depth}px)`;
-            });
-        });
-    </script>
+  let display = '';
+  if (days > 0) {
+    display = `${days}d ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  } else {
+    display = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  document.getElementById('countdown').textContent = display;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// COMPLETION TRACKING
+// ═══════════════════════════════════════════════════════════════════════
+const GAMES = [
+  'werewolf',
+  'folderdle',
+  'caveman',
+  'nerdstack',
+  'mathemagical',
+  'memori',
+  'faceoff',
+  'scratchoff',
+  'guesswhat'
+];
+
+function updateCompletionStatus() {
+  const weekNum = getWeekNumber();
+  let completedCount = 0;
+
+  GAMES.forEach(game => {
+    const isCompleted = localStorage.getItem(`${game}_w${weekNum}`) === '1';
+    const checkmark = document.getElementById(`check-${game}`);
+    
+    if (isCompleted) {
+      completedCount++;
+      if (checkmark) {
+        checkmark.classList.add('completed');
+        checkmark.textContent = '✓';
+      }
+    } else {
+      if (checkmark) {
+        checkmark.classList.remove('completed');
+        checkmark.textContent = '';
+      }
+    }
+  });
+
+  // Update footer stats
+  document.getElementById('weekNumber').textContent = weekNum;
+  document.getElementById('completedCount').textContent = `${completedCount}/9`;
+  
+  // Calculate streak (simplified: 1 if all games completed this week, else 0)
+  const streak = completedCount === 9 ? 1 : 0;
+  document.getElementById('streakCount').textContent = streak;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// INITIALIZATION
+// ═══════════════════════════════════════════════════════════════════════
+function init() {
+  updateCountdown();
+  updateCompletionStatus();
+  
+  // Update countdown every second
+  setInterval(updateCountdown, 1000);
+  
+  // Update completion status every 5 seconds (in case user completes in another tab)
+  setInterval(updateCompletionStatus, 5000);
+}
+
+init();
+</script>
+
 </body>
 </html>

@@ -1,0 +1,2429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEMORI — DOM2D</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+        }
+        
+        :root {
+            --gold: #D4AF37;
+            --gold-dim: #B8972E;
+            --gold-bright: #FFD700;
+            --bg: #0a0a0a;
+            --bg2: rgba(255,255,255,0.04);
+            --text: #e8e8e8;
+            --text-dim: #888;
+            --red: #cc4444;
+            --mono: 'DM Mono', monospace;
+            --display: 'Bebas Neue', cursive;
+        }
+
+        body {
+            font-family: var(--mono);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 820px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin-bottom: 10px;
+        }
+        
+        .header-calendar {
+            position: absolute;
+            right: 0;
+        }
+
+        .header h1 {
+            font-family: var(--display);
+            font-size: clamp(52px, 12vw, 84px);
+            color: var(--gold);
+            letter-spacing: 6px;
+            text-shadow: 0 0 50px rgba(212,175,55,0.5);
+        }
+
+        .theme-title {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--gold-dim);
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 15px;
+        }
+
+        .stat {
+            background: rgba(255,255,255,0.015);
+            border: 1px solid rgba(212,175,55,0.07);
+            border-radius: 11px;
+            padding: 10px 20px;
+            transition: border-color 0.3s;
+        }
+
+        .stat-label {
+            font-size: 8px;
+            color: #444;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+
+        .stat-value {
+            font-family: var(--display);
+            font-size: 24px;
+            color: var(--gold-dim);
+            letter-spacing: 2px;
+        }
+
+        .goals {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+        .goal {
+            opacity: 0.5;
+        }
+
+        .goal.achieved {
+            color: var(--gold);
+            opacity: 1;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin: 0 auto;
+            max-width: 700px;
+        }
+
+        .card {
+            aspect-ratio: 1/1;
+            background: white;
+            border-radius: 12px;
+            cursor: pointer;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card.matched {
+            cursor: default;
+            border: 3px solid var(--gold);
+            animation: rainbow-border 2s linear infinite;
+        }
+        
+        @keyframes rainbow-border {
+            0% { border-color: #ff0000; box-shadow: 0 0 20px rgba(255,0,0,0.5); }
+            16% { border-color: #ff8800; box-shadow: 0 0 20px rgba(255,136,0,0.5); }
+            33% { border-color: #ffff00; box-shadow: 0 0 20px rgba(255,255,0,0.5); }
+            50% { border-color: #00ff00; box-shadow: 0 0 20px rgba(0,255,0,0.5); }
+            66% { border-color: #0088ff; box-shadow: 0 0 20px rgba(0,136,255,0.5); }
+            83% { border-color: #8800ff; box-shadow: 0 0 20px rgba(136,0,255,0.5); }
+            100% { border-color: #ff0000; box-shadow: 0 0 20px rgba(255,0,0,0.5); }
+        }
+        
+        .card.matched .card-front {
+            background: #f0f0f0;
+            color: #999;
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 300;
+            text-align: center;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: manual;
+        }
+
+        .card-back {
+            background: var(--gold);
+            color: var(--bg);
+            font-size: 2rem;
+            border: 8px solid white;
+            font-family: var(--display);
+            letter-spacing: 3px;
+        }
+
+        .card-front {
+            background: white;
+            color: #333;
+            transform: rotateY(180deg);
+            font-size: 1rem;
+            line-height: 1.4;
+            font-family: var(--mono);
+            font-weight: 300;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: var(--gold);
+            color: var(--bg);
+            border: none;
+            border-radius: 8px;
+            padding: 11px 44px;
+            font-family: var(--display);
+            font-size: 22px;
+            letter-spacing: 3px;
+            cursor: pointer;
+            box-shadow: 0 0 28px rgba(212,175,55,0.4);
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .win-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10,10,10,0.97);
+            border: 2px solid var(--gold);
+            box-shadow: 0 0 60px rgba(212,175,55,0.5);
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            display: none;
+            z-index: 1000;
+        }
+
+        .win-message.show {
+            display: block;
+            animation: slideIn 0.5s;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -60%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        .win-message h2 {
+            font-family: var(--display);
+            color: var(--gold);
+            font-size: 2.5rem;
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+        }
+
+        .win-message .medal {
+            font-family: var(--display);
+            font-size: 3rem;
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+            color: var(--gold);
+        }
+
+        .win-message p {
+            font-size: 1.2rem;
+            color: var(--text);
+            margin-bottom: 25px;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            z-index: 999;
+        }
+
+        .overlay.show {
+            display: block;
+        }
+        
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            animation: confetti-fall 3s linear forwards;
+        }
+        
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .game-board {
+                gap: 8px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 280px;
+            }
+        }
+
+        /* Calendar Component Styles */
+        .header-btn {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: var(--text-dim);
+            border-radius: 6px;
+            width: 32px;
+            height: 32px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--text);
+            color: var(--text);
+        }
+
+        .header-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .calendar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .calendar-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .calendar-modal {
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-title {
+            font-family: var(--display);
+            font-size: 24px;
+            color: var(--text);
+            letter-spacing: 3px;
+        }
+
+        .btn-close {
+            background: transparent;
+            border: none;
+            color: #666;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px 8px;
+            line-height: 1;
+        }
+
+        .btn-close:hover {
+            color: var(--text);
+        }
+
+        .calendar-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .calendar-week {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .calendar-week:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .calendar-week.current {
+            border-color: var(--gold);
+            background: rgba(212,175,55,0.1);
+        }
+
+        .cw-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .cw-week {
+            font-size: 14px;
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .cw-number {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .cw-badge {
+            font-size: 9px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .cw-badge.current {
+            background: var(--gold);
+            color: var(--bg);
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    
+    <div class="container">
+        <div class="header">
+            <div class="header-top">
+                <h1>MEMORI</h1>
+                <div class="header-calendar">
+                    <button class="header-btn" onclick="openCalendar()" title="Select week">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="theme-title" id="themeTitle">Anagrams</div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">Flips</div>
+                    <div class="stat-value" id="flips">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Pairs</div>
+                    <div class="stat-value" id="pairs">0/10</div>
+                </div>
+            </div>
+            <div class="goals">
+                <div class="goal" id="gold">GOLD: 30</div>
+                <div class="goal" id="silver">SILVER: 40</div>
+                <div class="goal" id="bronze">BRONZE: 50</div>
+            </div>
+        </div>
+
+        <div class="game-board" id="gameBoard"></div>
+
+        <div class="controls">
+            <button class="btn" onclick="newGame()">RESTART</button>
+        </div>
+    </div>
+
+    <div class="win-message" id="winMessage">
+        <div class="medal" id="medal"></div>
+        <h2>Congratulations!</h2>
+        <p id="winText"></p>
+        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <button class="btn" onclick="shareScore()">SHARE</button>
+            <button class="btn" onclick="newGame()">REPLAY</button>
+        </div>
+    </div>
+
+    <div class="calendar-overlay" id="calendar-overlay" onclick="closeCalendar(event)">
+        <div class="calendar-modal" onclick="event.stopPropagation()">
+            <div class="calendar-header">
+                <div class="calendar-title">SELECT WEEK</div>
+                <button class="btn-close" onclick="closeCalendar()">&times;</button>
+            </div>
+            <div class="calendar-list" id="calendar-list"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentLevelIndex = 0;
+        
+        const themes = [
+            {
+                name: "Anagrams",
+                pairs: [
+                    ["astronomer", "moon starer"],
+                    ["the eyes", "they see"],
+                    ["dormitory", "dirty room"],
+                    ["conversation", "voices rant on"],
+                    ["eleven plus two", "twelve plus one"],
+                    ["a gentleman", "elegant man"],
+                    ["debit card", "bad credit"],
+                    ["the countryside", "no city dust here"],
+                    ["listen", "silent"],
+                    ["Elvis", "lives"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Numbers & Math",
+                pairs: [
+                    ["3.14159...", "Pi"],
+                    ["2, 3, 5, 7, 11...", "Prime Numbers"],
+                    ["1, 1, 2, 3, 5, 8...", "Fibonacci Sequence"],
+                    ["E = mc²", "Einstein's Equation"],
+                    ["6.022 × 10²³", "Avogadro's Number"],
+                    ["a² + b² = c²", "Pythagorean Theorem"],
+                    ["∞", "Infinity"],
+                    ["0", "Zero"],
+                    ["1.618...", "Golden Ratio"],
+                    ["i² = -1", "Imaginary Number"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Couples",
+                pairs: [
+                    ["Barack Obama", "Michelle Obama"],
+                    ["Brad Pitt", "Angelina Jolie"],
+                    ["David Beckham", "Victoria Beckham"],
+                    ["Jay-Z", "Beyoncé"],
+                    ["Prince William", "Kate Middleton"],
+                    ["Ryan Reynolds", "Blake Lively"],
+                    ["John Legend", "Chrissy Teigen"],
+                    ["Justin Timberlake", "Jessica Biel"],
+                    ["Tom Hanks", "Rita Wilson"],
+                    ["George Clooney", "Amal Clooney"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "More Famous Couples",
+                pairs: [
+                    ["Will Smith", "Jada Pinkett Smith"],
+                    ["Ashton Kutcher", "Mila Kunis"],
+                    ["Dax Shepard", "Kristen Bell"],
+                    ["Blake Shelton", "Gwen Stefani"],
+                    ["Keith Urban", "Nicole Kidman"],
+                    ["David Burtka", "Neil Patrick Harris"],
+                    ["Portia de Rossi", "Ellen DeGeneres"],
+                    ["Justin Verlander", "Kate Upton"],
+                    ["Alex Rodriguez", "Jennifer Lopez"],
+                    ["Travis Kelce", "Taylor Swift"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Parents & Children",
+                pairs: [
+                    ["Will Smith", "Jaden Smith"],
+                    ["Billy Ray Cyrus", "Miley Cyrus"],
+                    ["Jon Voight", "Angelina Jolie"],
+                    ["Goldie Hawn", "Kate Hudson"],
+                    ["Demi Moore", "Rumer Willis"],
+                    ["Lenny Kravitz", "Zoë Kravitz"],
+                    ["Phil Collins", "Lily Collins"],
+                    ["Clint Eastwood", "Scott Eastwood"],
+                    ["Stephen King", "Joe Hill"],
+                    ["Bob Marley", "Ziggy Marley"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Greetings Around the World",
+                pairs: [
+                    ["English", "Hello"],
+                    ["Spanish", "Hola"],
+                    ["French", "Bonjour"],
+                    ["German", "Guten Tag"],
+                    ["Italian", "Ciao"],
+                    ["Japanese", "Konnichiwa"],
+                    ["Mandarin", "Nǐ hǎo"],
+                    ["Arabic", "Marhaba"],
+                    ["Hindi", "Namaste"],
+                    ["Russian", "Privet"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Landmarks & Countries",
+                pairs: [
+                    ["Eiffel Tower", "France"],
+                    ["Statue of Liberty", "United States"],
+                    ["Great Wall", "China"],
+                    ["Colosseum", "Italy"],
+                    ["Taj Mahal", "India"],
+                    ["Big Ben", "United Kingdom"],
+                    ["Sydney Opera House", "Australia"],
+                    ["Christ the Redeemer", "Brazil"],
+                    ["Machu Picchu", "Peru"],
+                    ["Pyramids of Giza", "Egypt"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Sci-Fi Movies & Directors",
+                pairs: [
+                    ["Blade Runner", "Ridley Scott"],
+                    ["The Matrix", "The Wachowskis"],
+                    ["2001: A Space Odyssey", "Stanley Kubrick"],
+                    ["Inception", "Christopher Nolan"],
+                    ["E.T.", "Steven Spielberg"],
+                    ["Star Wars", "George Lucas"],
+                    ["District 9", "Neill Blomkamp"],
+                    ["Arrival", "Denis Villeneuve"],
+                    ["The Terminator", "James Cameron"],
+                    ["Ex Machina", "Alex Garland"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Drama Movies & Directors",
+                pairs: [
+                    ["The Godfather", "Francis Ford Coppola"],
+                    ["Schindler's List", "Steven Spielberg"],
+                    ["Forrest Gump", "Robert Zemeckis"],
+                    ["The Shawshank Redemption", "Frank Darabont"],
+                    ["Goodfellas", "Martin Scorsese"],
+                    ["Pulp Fiction", "Quentin Tarantino"],
+                    ["Fight Club", "David Fincher"],
+                    ["Parasite", "Bong Joon-ho"],
+                    ["No Country for Old Men", "Coen Brothers"],
+                    ["There Will Be Blood", "Paul Thomas Anderson"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Comedy Movies & Characters",
+                pairs: [
+                    ["The Hangover", "Alan Garner"],
+                    ["Dumb and Dumber", "Lloyd Christmas"],
+                    ["Anchorman", "Ron Burgundy"],
+                    ["Austin Powers", "Dr. Evil"],
+                    ["Ace Ventura", "Lois Einhorn"],
+                    ["Mrs. Doubtfire", "Miranda Hillard"],
+                    ["Elf", "Buddy"],
+                    ["The Mask", "Stanley Ipkiss"],
+                    ["Bridesmaids", "Megan Price"],
+                    ["Step Brothers", "Brennan Huff"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Animated Movies & Characters",
+                pairs: [
+                    ["Toy Story", "Woody"],
+                    ["Finding Nemo", "Nemo"],
+                    ["The Lion King", "Simba"],
+                    ["Shrek", "Donkey"],
+                    ["Frozen", "Elsa"],
+                    ["The Incredibles", "Mr. Incredible"],
+                    ["Up", "Carl Fredricksen"],
+                    ["Moana", "Maui"],
+                    ["Ratatouille", "Remy"],
+                    ["Wall-E", "EVE"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Restaurants & Iconic Items",
+                pairs: [
+                    ["McDonald's", "Big Mac"],
+                    ["KFC", "Fried Chicken Bucket"],
+                    ["Taco Bell", "Crunchwrap Supreme"],
+                    ["Subway", "Footlong Sub"],
+                    ["Burger King", "Whopper"],
+                    ["Wendy's", "Frosty"],
+                    ["Chipotle", "Burrito Bowl"],
+                    ["Starbucks", "Frappuccino"],
+                    ["Dunkin'", "Donuts"],
+                    ["Pizza Hut", "Pan Pizza"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Video Games & Main Characters",
+                pairs: [
+                    ["Super Mario Bros", "Mario"],
+                    ["The Legend of Zelda", "Link"],
+                    ["Halo", "Master Chief"],
+                    ["Tomb Raider", "Lara Croft"],
+                    ["The Last of Us", "Joel"],
+                    ["God of War", "Kratos"],
+                    ["Uncharted", "Nathan Drake"],
+                    ["Metroid", "Samus Aran"],
+                    ["Final Fantasy VII", "Cloud Strife"],
+                    ["Sonic the Hedgehog", "Sonic"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Video Games & Villains",
+                pairs: [
+                    ["Super Mario Bros", "Bowser"],
+                    ["The Legend of Zelda", "Ganondorf"],
+                    ["Sonic the Hedgehog", "Dr. Robotnik"],
+                    ["Mega Man", "Dr. Wily"],
+                    ["Street Fighter", "M. Bison"],
+                    ["Final Fantasy VII", "Sephiroth"],
+                    ["Portal", "GLaDOS"],
+                    ["Resident Evil", "Albert Wesker"],
+                    ["God of War", "Ares"],
+                    ["Overwatch", "Reaper"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Consoles & Best-Selling Games",
+                pairs: [
+                    ["PlayStation 2", "Grand Theft Auto: San Andreas"],
+                    ["Nintendo DS", "New Super Mario Bros"],
+                    ["Game Boy", "Tetris"],
+                    ["Wii", "Wii Sports"],
+                    ["PlayStation", "Gran Turismo"],
+                    ["Xbox 360", "Kinect Adventures"],
+                    ["Nintendo Switch", "Mario Kart 8 Deluxe"],
+                    ["PlayStation 4", "Grand Theft Auto V"],
+                    ["NES", "Super Mario Bros"],
+                    ["SNES", "Super Mario World"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Video Games & Studios",
+                pairs: [
+                    ["The Legend of Zelda", "Nintendo"],
+                    ["Halo", "Bungie"],
+                    ["Uncharted", "Naughty Dog"],
+                    ["The Witcher", "CD Projekt Red"],
+                    ["Grand Theft Auto", "Rockstar Games"],
+                    ["Overwatch", "Blizzard"],
+                    ["God of War", "Santa Monica Studio"],
+                    ["Street Fighter", "Capcom"],
+                    ["Skyrim", "Bethesda"],
+                    ["Portal", "Valve"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Movies & Plot Summaries",
+                pairs: [
+                    ["Jaws", "Shark terrorizes beach town"],
+                    ["Titanic", "Ship sinks, lovers separate"],
+                    ["The Sixth Sense", "Boy sees dead people"],
+                    ["Jurassic Park", "Dinosaurs escape theme park"],
+                    ["The Wizard of Oz", "Girl clicks heels to go home"],
+                    ["Rocky", "Underdog boxer gets title shot"],
+                    ["E.T.", "Alien befriends lonely boy"],
+                    ["The Truman Show", "Man lives in TV show"],
+                    ["Castaway", "Man stranded on island"],
+                    ["Groundhog Day", "Man relives same day"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Video Games & Descriptions",
+                pairs: [
+                    ["Minecraft", "Build anything with blocks"],
+                    ["Among Us", "Find the imposter on spaceship"],
+                    ["Dark Souls", "Die repeatedly in brutal fantasy"],
+                    ["The Sims", "Control virtual people's lives"],
+                    ["Pac-Man", "Eat dots, avoid ghosts"],
+                    ["Tetris", "Stack falling blocks perfectly"],
+                    ["Portal", "Solve puzzles with teleportation"],
+                    ["Stardew Valley", "Farm and befriend villagers"],
+                    ["Animal Crossing", "Live on island with animals"],
+                    ["Fortnite", "Battle royale with building"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Masters & Apprentices",
+                pairs: [
+                    ["Obi-Wan Kenobi", "Luke Skywalker"],
+                    ["Yoda", "Anakin Skywalker"],
+                    ["Dumbledore", "Harry Potter"],
+                    ["Mr. Miyagi", "Daniel LaRusso"],
+                    ["Gandalf", "Frodo"],
+                    ["Charles Xavier", "Jean Grey"],
+                    ["Morpheus", "Neo"],
+                    ["Doc Brown", "Marty McFly"],
+                    ["Splinter", "Leonardo"],
+                    ["Ra's al Ghul", "Bruce Wayne"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Sports & Famous Champions",
+                pairs: [
+                    ["Basketball", "Michael Jordan"],
+                    ["Tennis", "Serena Williams"],
+                    ["Boxing", "Muhammad Ali"],
+                    ["Golf", "Tiger Woods"],
+                    ["Swimming", "Michael Phelps"],
+                    ["Gymnastics", "Simone Biles"],
+                    ["Soccer", "Pelé"],
+                    ["Formula 1", "Lewis Hamilton"],
+                    ["Skateboarding", "Tony Hawk"],
+                    ["UFC", "Conor McGregor"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Pokémon & Types",
+                pairs: [
+                    ["Pikachu", "Electric"],
+                    ["Charizard", "Fire/Flying"],
+                    ["Blastoise", "Water"],
+                    ["Venusaur", "Grass/Poison"],
+                    ["Gengar", "Ghost/Poison"],
+                    ["Mewtwo", "Psychic"],
+                    ["Gyarados", "Water/Flying"],
+                    ["Dragonite", "Dragon/Flying"],
+                    ["Jigglypuff", "Normal/Fairy"],
+                    ["Snorlax", "Normal"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Pokémon Descriptions",
+                pairs: [
+                    ["Pikachu", "Yellow mouse with lightning"],
+                    ["Charizard", "Orange dragon breathes fire"],
+                    ["Meowth", "Cat-like with coin on head"],
+                    ["Psyduck", "Yellow duck always confused"],
+                    ["Squirtle", "Blue turtle shoots water"],
+                    ["Bulbasaur", "Green with plant bulb"],
+                    ["Jigglypuff", "Pink balloon sings lullabies"],
+                    ["Eevee", "Brown fox with fluffy tail"],
+                    ["Snorlax", "Huge sleepy bear creature"],
+                    ["Magikarp", "Useless flopping fish"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Monsters",
+                pairs: [
+                    ["Dracula", "Vampire from Transylvania"],
+                    ["Frankenstein", "Green stitched monster"],
+                    ["The Mummy", "Wrapped in bandages"],
+                    ["Werewolf", "Wolf transformation at full moon"],
+                    ["Medusa", "Snake hair turns to stone"],
+                    ["Bigfoot", "Large hairy ape-man"],
+                    ["Chupacabra", "Blood-sucking goat killer"],
+                    ["Loch Ness Monster", "Long-necked sea creature"],
+                    ["Kraken", "Giant tentacled sea monster"],
+                    ["Zombie", "Undead flesh-eater"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "International Foods & Origin",
+                pairs: [
+                    ["Sushi", "Japan"],
+                    ["Pizza", "Italy"],
+                    ["Tacos", "Mexico"],
+                    ["Croissant", "France"],
+                    ["Pad Thai", "Thailand"],
+                    ["Paella", "Spain"],
+                    ["Poutine", "Canada"],
+                    ["Bratwurst", "Germany"],
+                    ["Falafel", "Middle East"],
+                    ["Kimchi", "Korea"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Singers & Hit Songs",
+                pairs: [
+                    ["Whitney Houston", "I Will Always Love You"],
+                    ["Michael Jackson", "Thriller"],
+                    ["Adele", "Rolling in the Deep"],
+                    ["Elvis Presley", "Can't Help Falling in Love"],
+                    ["Beyoncé", "Single Ladies"],
+                    ["Frank Sinatra", "My Way"],
+                    ["Aretha Franklin", "Respect"],
+                    ["Prince", "Purple Rain"],
+                    ["Madonna", "Like a Virgin"],
+                    ["Celine Dion", "My Heart Will Go On"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Singers & Hit Songs 2",
+                pairs: [
+                    ["Lady Gaga", "Bad Romance"],
+                    ["Ed Sheeran", "Shape of You"],
+                    ["Taylor Swift", "Shake It Off"],
+                    ["Bruno Mars", "Uptown Funk"],
+                    ["Rihanna", "Umbrella"],
+                    ["Katy Perry", "Firework"],
+                    ["Justin Bieber", "Baby"],
+                    ["Ariana Grande", "Thank U, Next"],
+                    ["The Weeknd", "Blinding Lights"],
+                    ["Billie Eilish", "Bad Guy"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Singers & Hit Songs 3",
+                pairs: [
+                    ["Amy Winehouse", "Rehab"],
+                    ["Mariah Carey", "All I Want for Christmas"],
+                    ["Shakira", "Hips Don't Lie"],
+                    ["Elton John", "Rocket Man"],
+                    ["David Bowie", "Space Oddity"],
+                    ["Sam Smith", "Stay With Me"],
+                    ["Alicia Keys", "Fallin'"],
+                    ["John Legend", "All of Me"],
+                    ["Sia", "Chandelier"],
+                    ["Pharrell Williams", "Happy"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Bands & Hit Songs",
+                pairs: [
+                    ["The Beatles", "Hey Jude"],
+                    ["Queen", "Bohemian Rhapsody"],
+                    ["Led Zeppelin", "Stairway to Heaven"],
+                    ["Nirvana", "Smells Like Teen Spirit"],
+                    ["The Rolling Stones", "Paint It Black"],
+                    ["Pink Floyd", "Comfortably Numb"],
+                    ["U2", "With or Without You"],
+                    ["Radiohead", "Creep"],
+                    ["Metallica", "Enter Sandman"],
+                    ["AC/DC", "Back in Black"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Bands & Hit Songs 2",
+                pairs: [
+                    ["Coldplay", "Yellow"],
+                    ["Maroon 5", "Sugar"],
+                    ["Imagine Dragons", "Radioactive"],
+                    ["OneRepublic", "Counting Stars"],
+                    ["The Killers", "Mr. Brightside"],
+                    ["Arctic Monkeys", "Do I Wanna Know?"],
+                    ["Muse", "Uprising"],
+                    ["Red Hot Chili Peppers", "Under the Bridge"],
+                    ["Foo Fighters", "Everlong"],
+                    ["Green Day", "Boulevard of Broken Dreams"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Bands & Hit Songs 3",
+                pairs: [
+                    ["ABBA", "Dancing Queen"],
+                    ["The Police", "Every Breath You Take"],
+                    ["Fleetwood Mac", "Dreams"],
+                    ["Eagles", "Hotel California"],
+                    ["Journey", "Don't Stop Believin'"],
+                    ["Bon Jovi", "Livin' on a Prayer"],
+                    ["Guns N' Roses", "Sweet Child O' Mine"],
+                    ["Aerosmith", "Dream On"],
+                    ["The Who", "Baba O'Riley"],
+                    ["The Doors", "Light My Fire"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Cars & Brands",
+                pairs: [
+                    ["Mustang", "Ford"],
+                    ["Corvette", "Chevrolet"],
+                    ["911", "Porsche"],
+                    ["Model S", "Tesla"],
+                    ["Civic", "Honda"],
+                    ["Camry", "Toyota"],
+                    ["Beetle", "Volkswagen"],
+                    ["3 Series", "BMW"],
+                    ["Wrangler", "Jeep"],
+                    ["Miata", "Mazda"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Inventors & Inventions",
+                pairs: [
+                    ["Thomas Edison", "Light Bulb"],
+                    ["Alexander Graham Bell", "Telephone"],
+                    ["Wright Brothers", "Airplane"],
+                    ["Nikola Tesla", "AC Current"],
+                    ["Steve Jobs", "iPhone"],
+                    ["Tim Berners-Lee", "World Wide Web"],
+                    ["Johannes Gutenberg", "Printing Press"],
+                    ["Marie Curie", "Radioactivity Discovery"],
+                    ["Benjamin Franklin", "Lightning Rod"],
+                    ["Galileo Galilei", "Telescope Improvements"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Companies & CEOs",
+                pairs: [
+                    ["Apple", "Tim Cook"],
+                    ["Tesla", "Elon Musk"],
+                    ["Microsoft", "Satya Nadella"],
+                    ["Amazon", "Andy Jassy"],
+                    ["Meta", "Mark Zuckerberg"],
+                    ["Google", "Sundar Pichai"],
+                    ["Netflix", "Reed Hastings"],
+                    ["Disney", "Bob Iger"],
+                    ["Berkshire Hathaway", "Warren Buffett"],
+                    ["NVIDIA", "Jensen Huang"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Actors' Names",
+                pairs: [
+                    ["Leonardo", "DiCaprio"],
+                    ["Scarlett", "Johansson"],
+                    ["Denzel", "Washington"],
+                    ["Meryl", "Streep"],
+                    ["Morgan", "Freeman"],
+                    ["Natalie", "Portman"],
+                    ["Joaquin", "Phoenix"],
+                    ["Charlize", "Theron"],
+                    ["Benedict", "Cumberbatch"],
+                    ["Cate", "Blanchett"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Major Historical Events & Years",
+                pairs: [
+                    ["First Moon Landing", "1969"],
+                    ["Fall of Berlin Wall", "1989"],
+                    ["World War II Ended", "1945"],
+                    ["9/11 Attacks", "2001"],
+                    ["Titanic Sank", "1912"],
+                    ["Declaration of Independence", "1776"],
+                    ["Pearl Harbor Attack", "1941"],
+                    ["JFK Assassination", "1963"],
+                    ["Martin Luther King Assassinated", "1968"],
+                    ["Chernobyl Disaster", "1986"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Major Historical Events & Years 2",
+                pairs: [
+                    ["French Revolution Began", "1789"],
+                    ["Christopher Columbus Voyage", "1492"],
+                    ["Printing Press Invented", "1440"],
+                    ["Roman Empire Fell", "476"],
+                    ["Black Death Pandemic", "1347"],
+                    ["Magna Carta Signed", "1215"],
+                    ["Wright Brothers Flight", "1903"],
+                    ["First iPhone Released", "2007"],
+                    ["COVID-19 Pandemic", "2020"],
+                    ["Nelson Mandela Released", "1990"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Major Historical Events & Years 3",
+                pairs: [
+                    ["Stock Market Crash", "1929"],
+                    ["Cuban Missile Crisis", "1962"],
+                    ["Berlin Wall Built", "1961"],
+                    ["First Super Bowl", "1967"],
+                    ["Martin Luther King Jr. Speech", "1963"],
+                    ["Women's Suffrage (US)", "1920"],
+                    ["Louisiana Purchase", "1803"],
+                    ["California Gold Rush", "1849"],
+                    ["Boston Tea Party", "1773"],
+                    ["Apollo 13 Mission", "1970"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Composers & Famous Pieces",
+                pairs: [
+                    ["Ludwig van Beethoven", "Symphony No. 5"],
+                    ["Wolfgang Amadeus Mozart", "Eine kleine Nachtmusik"],
+                    ["Johann Sebastian Bach", "Toccata and Fugue"],
+                    ["Pyotr Tchaikovsky", "Swan Lake"],
+                    ["Antonio Vivaldi", "The Four Seasons"],
+                    ["Frédéric Chopin", "Nocturne in E-flat"],
+                    ["Claude Debussy", "Clair de Lune"],
+                    ["George Gershwin", "Rhapsody in Blue"],
+                    ["Igor Stravinsky", "The Rite of Spring"],
+                    ["Johannes Brahms", "Lullaby"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Cartoons & Characters",
+                pairs: [
+                    ["SpongeBob SquarePants", "SpongeBob"],
+                    ["The Simpsons", "Homer Simpson"],
+                    ["Scooby-Doo", "Shaggy"],
+                    ["Tom and Jerry", "Tom"],
+                    ["Looney Tunes", "Bugs Bunny"],
+                    ["Teenage Mutant Ninja Turtles", "Leonardo"],
+                    ["Adventure Time", "Finn"],
+                    ["Avatar: The Last Airbender", "Aang"],
+                    ["Rick and Morty", "Rick Sanchez"],
+                    ["South Park", "Eric Cartman"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Bands & Lead Singers",
+                pairs: [
+                    ["Queen", "Freddie Mercury"],
+                    ["The Rolling Stones", "Mick Jagger"],
+                    ["Nirvana", "Kurt Cobain"],
+                    ["U2", "Bono"],
+                    ["Led Zeppelin", "Robert Plant"],
+                    ["The Doors", "Jim Morrison"],
+                    ["Pearl Jam", "Eddie Vedder"],
+                    ["Aerosmith", "Steven Tyler"],
+                    ["Guns N' Roses", "Axl Rose"],
+                    ["Coldplay", "Chris Martin"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Rappers & Biggest Hits",
+                pairs: [
+                    ["Eminem", "Lose Yourself"],
+                    ["2Pac", "California Love"],
+                    ["Notorious B.I.G.", "Juicy"],
+                    ["Jay-Z", "Empire State of Mind"],
+                    ["Kanye West", "Stronger"],
+                    ["Drake", "God's Plan"],
+                    ["Kendrick Lamar", "HUMBLE."],
+                    ["Snoop Dogg", "Gin and Juice"],
+                    ["50 Cent", "In Da Club"],
+                    ["Lil Wayne", "A Milli"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Singing Duos",
+                pairs: [
+                    ["Simon & Garfunkel", "The Sound of Silence"],
+                    ["Hall & Oates", "You Make My Dreams"],
+                    ["Sonny & Cher", "I Got You Babe"],
+                    ["The Carpenters", "Close to You"],
+                    ["The Everly Brothers", "All I Have to Do Is Dream"],
+                    ["Outkast", "Hey Ya!"],
+                    ["The White Stripes", "Seven Nation Army"],
+                    ["Daft Punk", "Get Lucky"],
+                    ["Twenty One Pilots", "Stressed Out"],
+                    ["The Chainsmokers", "Closer"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Movie Duos",
+                pairs: [
+                    ["Butch & Sundance", "Butch Cassidy and the Sundance Kid"],
+                    ["Harry & Lloyd", "Dumb and Dumber"],
+                    ["Thelma & Louise", "Road trip crime movie"],
+                    ["Jules & Vincent", "Pulp Fiction"],
+                    ["Han Solo & Chewbacca", "Star Wars"],
+                    ["Woody & Buzz", "Toy Story"],
+                    ["Marty & Doc", "Back to the Future"],
+                    ["Wayne & Garth", "Wayne's World"],
+                    ["Turner & Hooch", "Cop and dog buddy comedy"],
+                    ["Riggs & Murtaugh", "Lethal Weapon"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Superheroes & Powers",
+                pairs: [
+                    ["Superman", "Super strength & flight"],
+                    ["The Flash", "Super speed"],
+                    ["Wonder Woman", "Super strength & lasso"],
+                    ["Spider-Man", "Wall-crawling & web-slinging"],
+                    ["Aquaman", "Underwater breathing & talk to fish"],
+                    ["Green Lantern", "Power ring creates constructs"],
+                    ["Wolverine", "Healing factor & claws"],
+                    ["Storm", "Weather manipulation"],
+                    ["Invisible Woman", "Invisibility & force fields"],
+                    ["Cyclops", "Optic energy beams"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Superheroes & Real Names",
+                pairs: [
+                    ["Superman", "Clark Kent"],
+                    ["Batman", "Bruce Wayne"],
+                    ["Spider-Man", "Peter Parker"],
+                    ["Iron Man", "Tony Stark"],
+                    ["The Flash", "Barry Allen"],
+                    ["Wonder Woman", "Diana Prince"],
+                    ["Captain America", "Steve Rogers"],
+                    ["Thor", "Thor Odinson"],
+                    ["Hulk", "Bruce Banner"],
+                    ["Black Widow", "Natasha Romanoff"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Superheroes & Nemeses",
+                pairs: [
+                    ["Batman", "The Joker"],
+                    ["Superman", "Lex Luthor"],
+                    ["Spider-Man", "Green Goblin"],
+                    ["The Flash", "Reverse-Flash"],
+                    ["Wonder Woman", "Cheetah"],
+                    ["Captain America", "Red Skull"],
+                    ["Thor", "Loki"],
+                    ["Iron Man", "Mandarin"],
+                    ["Hulk", "Abomination"],
+                    ["Aquaman", "Black Manta"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Superheroes & Teams",
+                pairs: [
+                    ["Superman", "Justice League"],
+                    ["Iron Man", "Avengers"],
+                    ["Cyclops", "X-Men"],
+                    ["Star-Lord", "Guardians of the Galaxy"],
+                    ["Nightwing", "Teen Titans"],
+                    ["Deadpool", "X-Force"],
+                    ["Luke Cage", "Defenders"],
+                    ["Aquaman", "Justice League Dark"],
+                    ["She-Hulk", "A-Force"],
+                    ["Booster Gold", "Justice League International"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Books & Authors",
+                pairs: [
+                    ["1984", "George Orwell"],
+                    ["To Kill a Mockingbird", "Harper Lee"],
+                    ["Pride and Prejudice", "Jane Austen"],
+                    ["The Great Gatsby", "F. Scott Fitzgerald"],
+                    ["Harry Potter", "J.K. Rowling"],
+                    ["The Hobbit", "J.R.R. Tolkien"],
+                    ["The Catcher in the Rye", "J.D. Salinger"],
+                    ["Moby-Dick", "Herman Melville"],
+                    ["The Odyssey", "Homer"],
+                    ["Lord of the Flies", "William Golding"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Fictional Couples",
+                pairs: [
+                    ["Romeo", "Juliet"],
+                    ["Mr. Darcy", "Elizabeth Bennet"],
+                    ["Jack", "Rose"],
+                    ["Han Solo", "Princess Leia"],
+                    ["Westley", "Buttercup"],
+                    ["Edward", "Bella"],
+                    ["Katniss", "Peeta"],
+                    ["Aragorn", "Arwen"],
+                    ["Noah", "Allie"],
+                    ["Ross", "Rachel"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Fictional Couples 2",
+                pairs: [
+                    ["Shrek", "Fiona"],
+                    ["Wall-E", "EVE"],
+                    ["Carl", "Ellie"],
+                    ["Simba", "Nala"],
+                    ["Aladdin", "Jasmine"],
+                    ["Beast", "Belle"],
+                    ["Flynn Rider", "Rapunzel"],
+                    ["Kristoff", "Anna"],
+                    ["Prince Charming", "Cinderella"],
+                    ["Prince Eric", "Ariel"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Movies & Fictional Catastrophes",
+                pairs: [
+                    ["Titanic", "Ship hits iceberg"],
+                    ["The Day After Tomorrow", "Global superstorm freezes Earth"],
+                    ["2012", "Massive earthquakes end world"],
+                    ["Armageddon", "Asteroid threatens Earth"],
+                    ["Deep Impact", "Comet threatens Earth"],
+                    ["San Andreas", "Massive earthquake hits California"],
+                    ["The Poseidon Adventure", "Cruise ship capsizes"],
+                    ["Twister", "Multiple deadly tornadoes"],
+                    ["Dante's Peak", "Volcano destroys town"],
+                    ["The Perfect Storm", "Fishing boat in superstorm"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Animals & Group Names",
+                pairs: [
+                    ["Lions", "Pride"],
+                    ["Wolves", "Pack"],
+                    ["Crows", "Murder"],
+                    ["Fish", "School"],
+                    ["Geese", "Gaggle"],
+                    ["Bees", "Swarm"],
+                    ["Ants", "Colony"],
+                    ["Whales", "Pod"],
+                    ["Flamingos", "Flamboyance"],
+                    ["Owls", "Parliament"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Tools & Their Uses",
+                pairs: [
+                    ["Hammer", "Driving nails"],
+                    ["Screwdriver", "Turning screws"],
+                    ["Saw", "Cutting wood"],
+                    ["Wrench", "Tightening bolts"],
+                    ["Drill", "Making holes"],
+                    ["Pliers", "Gripping objects"],
+                    ["Level", "Checking straightness"],
+                    ["Tape Measure", "Measuring distances"],
+                    ["Chisel", "Carving wood"],
+                    ["Sandpaper", "Smoothing surfaces"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Baby Animal Names",
+                pairs: [
+                    ["Cat", "Kitten"],
+                    ["Dog", "Puppy"],
+                    ["Cow", "Calf"],
+                    ["Chicken", "Chick"],
+                    ["Horse", "Foal"],
+                    ["Deer", "Fawn"],
+                    ["Sheep", "Lamb"],
+                    ["Duck", "Duckling"],
+                    ["Goat", "Kid"],
+                    ["Kangaroo", "Joey"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Animals & Descriptions",
+                pairs: [
+                    ["Giraffe", "Tallest land animal with long neck"],
+                    ["Elephant", "Largest land animal with trunk"],
+                    ["Cheetah", "Fastest land animal"],
+                    ["Sloth", "Slowest mammal"],
+                    ["Penguin", "Bird that can't fly but swims"],
+                    ["Octopus", "Eight-armed sea creature"],
+                    ["Platypus", "Egg-laying mammal with duck bill"],
+                    ["Chameleon", "Lizard that changes colors"],
+                    ["Hummingbird", "Tiny bird that hovers"],
+                    ["Koala", "Sleeps 20 hours eating eucalyptus"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Technology & Uses",
+                pairs: [
+                    ["Smartphone", "Mobile communication & apps"],
+                    ["Laptop", "Portable computing"],
+                    ["Smartwatch", "Wearable notifications & fitness"],
+                    ["Tablet", "Touchscreen portable device"],
+                    ["VR Headset", "Virtual reality experiences"],
+                    ["Drone", "Aerial photography & delivery"],
+                    ["3D Printer", "Creating physical objects"],
+                    ["Smart Speaker", "Voice-controlled assistant"],
+                    ["Fitness Tracker", "Monitoring health & steps"],
+                    ["E-reader", "Reading digital books"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "US States & Capitals",
+                pairs: [
+                    ["California", "Sacramento"],
+                    ["Texas", "Austin"],
+                    ["New York", "Albany"],
+                    ["Florida", "Tallahassee"],
+                    ["Illinois", "Springfield"],
+                    ["Pennsylvania", "Harrisburg"],
+                    ["Ohio", "Columbus"],
+                    ["Georgia", "Atlanta"],
+                    ["North Carolina", "Raleigh"],
+                    ["Michigan", "Lansing"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Fictional Weapons & Owners",
+                pairs: [
+                    ["Excalibur", "King Arthur"],
+                    ["Green Lightsaber", "Luke Skywalker"],
+                    ["Mjolnir", "Thor"],
+                    ["Master Sword", "Link"],
+                    ["Sting", "Bilbo/Frodo Baggins"],
+                    ["Andúril", "Aragorn"],
+                    ["Captain America's Shield", "Steve Rogers"],
+                    ["Wonder Woman's Lasso", "Diana Prince"],
+                    ["Wolverine's Claws", "Logan"],
+                    ["Gandalf's Staff", "Gandalf"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Love Around the World",
+                pairs: [
+                    ["French", "Amour"],
+                    ["Spanish", "Amor"],
+                    ["Italian", "Amore"],
+                    ["German", "Liebe"],
+                    ["Dutch", "Liefde"],
+                    ["Russian", "Любовь"],
+                    ["Japanese", "愛"],
+                    ["Korean", "사랑"],
+                    ["Greek", "Αγάπη"],
+                    ["Turkish", "Aşk"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Capitals & Countries",
+                pairs: [
+                    ["Paris", "France"],
+                    ["Tokyo", "Japan"],
+                    ["London", "United Kingdom"],
+                    ["Berlin", "Germany"],
+                    ["Rome", "Italy"],
+                    ["Madrid", "Spain"],
+                    ["Ottawa", "Canada"],
+                    ["Cairo", "Egypt"],
+                    ["Moscow", "Russia"],
+                    ["Beijing", "China"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Emoji Names",
+                pairs: [
+                    ["😂", "Face with Tears of Joy"],
+                    ["❤️", "Red Heart"],
+                    ["🔥", "Fire"],
+                    ["👍", "Thumbs Up"],
+                    ["🎉", "Party Popper"],
+                    ["🌟", "Glowing Star"],
+                    ["🌈", "Rainbow"],
+                    ["🦄", "Unicorn"],
+                    ["🍕", "Pizza"],
+                    ["☕", "Hot Beverage"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Foreign Films",
+                pairs: [
+                    ["La Vita è Bella", "Life Is Beautiful"],
+                    ["Le Fabuleux Destin d'Amélie Poulain", "Amélie"],
+                    ["Sen to Chihiro no Kamikakushi", "Spirited Away"],
+                    ["El Laberinto del Fauno", "Pan's Labyrinth"],
+                    ["Das Leben der Anderen", "The Lives of Others"],
+                    ["Cidade de Deus", "City of God"],
+                    ["La Haine", "Hate"],
+                    ["Oldboy", "Korean revenge thriller"],
+                    ["Intouchables", "The Intouchables"],
+                    ["Parasite", "기생충"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "TV Shows & Characters",
+                pairs: [
+                    ["Breaking Bad", "Walter White"],
+                    ["Game of Thrones", "Jon Snow"],
+                    ["Friends", "Rachel Green"],
+                    ["The Office", "Michael Scott"],
+                    ["Stranger Things", "Eleven"],
+                    ["The Crown", "Queen Elizabeth II"],
+                    ["Sherlock", "Sherlock Holmes"],
+                    ["Mad Men", "Don Draper"],
+                    ["The Sopranos", "Tony Soprano"],
+                    ["House", "Dr. Gregory House"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Planets & Facts",
+                pairs: [
+                    ["Mercury", "Closest to the Sun"],
+                    ["Venus", "Hottest planet"],
+                    ["Earth", "Only planet with life"],
+                    ["Mars", "The Red Planet"],
+                    ["Jupiter", "Largest planet"],
+                    ["Saturn", "Has iconic rings"],
+                    ["Uranus", "Rotates on its side"],
+                    ["Neptune", "Farthest from Sun"],
+                    ["Pluto", "Dwarf planet"],
+                    ["Moon", "Earth's natural satellite"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Coffee Drinks & Descriptions",
+                pairs: [
+                    ["Espresso", "Strong concentrated shot"],
+                    ["Cappuccino", "Espresso with steamed milk foam"],
+                    ["Latte", "Espresso with lots of steamed milk"],
+                    ["Americano", "Espresso with hot water"],
+                    ["Macchiato", "Espresso with dollop of foam"],
+                    ["Mocha", "Chocolate flavored latte"],
+                    ["Flat White", "Espresso with microfoam"],
+                    ["Cortado", "Equal espresso and steamed milk"],
+                    ["Affogato", "Espresso poured over ice cream"],
+                    ["Cold Brew", "Coffee steeped in cold water"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Dog Breeds & Characteristics",
+                pairs: [
+                    ["Golden Retriever", "Friendly family dog"],
+                    ["German Shepherd", "Intelligent working dog"],
+                    ["Beagle", "Small hunting dog"],
+                    ["Bulldog", "Wrinkly face, stocky build"],
+                    ["Poodle", "Curly hypoallergenic coat"],
+                    ["Chihuahua", "Tiny Mexican breed"],
+                    ["Husky", "Blue eyes, thick coat"],
+                    ["Dalmatian", "White with black spots"],
+                    ["Corgi", "Short legs, long body"],
+                    ["Great Dane", "Tallest dog breed"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Greek Gods & Domains",
+                pairs: [
+                    ["Zeus", "King of Gods, Sky & Thunder"],
+                    ["Poseidon", "God of the Sea"],
+                    ["Hades", "God of the Underworld"],
+                    ["Athena", "Goddess of Wisdom"],
+                    ["Apollo", "God of Sun & Music"],
+                    ["Artemis", "Goddess of the Hunt"],
+                    ["Ares", "God of War"],
+                    ["Aphrodite", "Goddess of Love"],
+                    ["Hephaestus", "God of Fire & Forge"],
+                    ["Hermes", "Messenger God"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Vitamins & Benefits",
+                pairs: [
+                    ["Vitamin A", "Vision and immune health"],
+                    ["Vitamin B12", "Energy and nerve function"],
+                    ["Vitamin C", "Immune system and healing"],
+                    ["Vitamin D", "Bone health and calcium"],
+                    ["Vitamin E", "Antioxidant protection"],
+                    ["Vitamin K", "Blood clotting"],
+                    ["Calcium", "Strong bones and teeth"],
+                    ["Iron", "Red blood cell production"],
+                    ["Zinc", "Wound healing and immunity"],
+                    ["Omega-3", "Heart and brain health"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Dance Styles & Origins",
+                pairs: [
+                    ["Ballet", "Classical French dance"],
+                    ["Tango", "Argentine partnered dance"],
+                    ["Salsa", "Latin Caribbean dance"],
+                    ["Hip Hop", "Urban street dance"],
+                    ["Flamenco", "Spanish passionate dance"],
+                    ["Waltz", "Austrian ballroom dance"],
+                    ["Breakdancing", "Acrobatic street dance"],
+                    ["Tap", "Rhythmic shoe dance"],
+                    ["Bollywood", "Indian film dance"],
+                    ["Irish Step", "Traditional Irish dance"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Art Movements & Famous Artists",
+                pairs: [
+                    ["Impressionism", "Claude Monet"],
+                    ["Cubism", "Pablo Picasso"],
+                    ["Surrealism", "Salvador Dalí"],
+                    ["Pop Art", "Andy Warhol"],
+                    ["Renaissance", "Leonardo da Vinci"],
+                    ["Post-Impressionism", "Vincent van Gogh"],
+                    ["Expressionism", "Edvard Munch"],
+                    ["Abstract", "Wassily Kandinsky"],
+                    ["Baroque", "Caravaggio"],
+                    ["Realism", "Gustave Courbet"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Phobias & Fears",
+                pairs: [
+                    ["Arachnophobia", "Fear of spiders"],
+                    ["Acrophobia", "Fear of heights"],
+                    ["Claustrophobia", "Fear of confined spaces"],
+                    ["Agoraphobia", "Fear of open spaces"],
+                    ["Ophidiophobia", "Fear of snakes"],
+                    ["Cynophobia", "Fear of dogs"],
+                    ["Trypophobia", "Fear of holes"],
+                    ["Nyctophobia", "Fear of darkness"],
+                    ["Aerophobia", "Fear of flying"],
+                    ["Hemophobia", "Fear of blood"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Cocktails & Main Ingredients",
+                pairs: [
+                    ["Margarita", "Tequila, lime, triple sec"],
+                    ["Mojito", "Rum, mint, lime, soda"],
+                    ["Martini", "Gin and vermouth"],
+                    ["Manhattan", "Whiskey and vermouth"],
+                    ["Old Fashioned", "Bourbon, bitters, sugar"],
+                    ["Cosmopolitan", "Vodka, cranberry, lime"],
+                    ["Piña Colada", "Rum, coconut, pineapple"],
+                    ["Bloody Mary", "Vodka and tomato juice"],
+                    ["Daiquiri", "Rum, lime, sugar"],
+                    ["Negroni", "Gin, Campari, vermouth"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Chess Pieces & Movements",
+                pairs: [
+                    ["King", "One square in any direction"],
+                    ["Queen", "Any direction, any distance"],
+                    ["Rook", "Straight lines only"],
+                    ["Bishop", "Diagonal lines only"],
+                    ["Knight", "L-shape, jumps pieces"],
+                    ["Pawn", "Forward one, captures diagonal"],
+                    ["Castling", "King and rook swap"],
+                    ["En Passant", "Special pawn capture"],
+                    ["Promotion", "Pawn becomes queen"],
+                    ["Check", "King under attack"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Weather Phenomena & Descriptions",
+                pairs: [
+                    ["Hurricane", "Massive rotating tropical storm"],
+                    ["Tornado", "Violent rotating wind funnel"],
+                    ["Blizzard", "Heavy snow with strong winds"],
+                    ["Tsunami", "Giant ocean wave from earthquake"],
+                    ["Hailstorm", "Ice balls falling from sky"],
+                    ["Lightning", "Electric discharge in atmosphere"],
+                    ["Rainbow", "Light refracted through water"],
+                    ["Aurora", "Colorful lights in polar skies"],
+                    ["Monsoon", "Seasonal heavy rainfall"],
+                    ["Drought", "Extended period without rain"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Musical Instruments & Families",
+                pairs: [
+                    ["Piano", "Keyboard"],
+                    ["Violin", "Bowed String"],
+                    ["Trumpet", "High Brass"],
+                    ["Flute", "High Woodwind"],
+                    ["Snare Drum", "Membranophone"],
+                    ["Cello", "Low Bowed String"],
+                    ["Saxophone", "Reed Woodwind"],
+                    ["Trombone", "Slide Brass"],
+                    ["Acoustic Guitar", "Plucked String"],
+                    ["Xylophone", "Idiophone"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Operating Systems & Companies",
+                pairs: [
+                    ["Windows", "Microsoft"],
+                    ["macOS", "Apple"],
+                    ["Android", "Google"],
+                    ["Linux Mint", "Community-driven"],
+                    ["Red Hat Enterprise", "Red Hat"],
+                    ["Ubuntu", "Canonical"],
+                    ["FreeBSD", "BSD Foundation"],
+                    ["PlayStation OS", "Sony"],
+                    ["Nintendo Switch OS", "Nintendo"],
+                    ["Tizen", "Samsung"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Dinosaurs & Facts",
+                pairs: [
+                    ["Tyrannosaurus Rex", "Massive carnivore, tiny arms"],
+                    ["Triceratops", "Three-horned herbivore"],
+                    ["Velociraptor", "Small intelligent predator"],
+                    ["Stegosaurus", "Plates on back, spiked tail"],
+                    ["Brachiosaurus", "Long-necked giant"],
+                    ["Pteranodon", "Flying reptile with crest"],
+                    ["Ankylosaurus", "Armored with club tail"],
+                    ["Diplodocus", "Longest known dinosaur"],
+                    ["Spinosaurus", "Sail-backed semi-aquatic"],
+                    ["Allosaurus", "Apex predator of Jurassic"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Constellations & Meanings",
+                pairs: [
+                    ["Orion", "The Hunter"],
+                    ["Ursa Major", "The Great Bear"],
+                    ["Cassiopeia", "The Queen"],
+                    ["Leo", "The Lion"],
+                    ["Scorpius", "The Scorpion"],
+                    ["Taurus", "The Bull"],
+                    ["Gemini", "The Twins"],
+                    ["Aquarius", "The Water Bearer"],
+                    ["Pisces", "The Fish"],
+                    ["Sagittarius", "The Archer"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Card Games & Player Counts",
+                pairs: [
+                    ["Texas Hold'em", "2-10 players"],
+                    ["Bridge", "Exactly 4 players"],
+                    ["Solitaire", "1 player only"],
+                    ["Hearts", "4 players"],
+                    ["Blackjack", "Dealer plus 1-7"],
+                    ["Gin Rummy", "2 players head-to-head"],
+                    ["Spades", "4 players in pairs"],
+                    ["Go Fish", "Best with 3-6"],
+                    ["Crazy Eights", "2-7 players"],
+                    ["War", "2 players classic"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Ocean Creatures & Habitats",
+                pairs: [
+                    ["Clownfish", "Coral reefs"],
+                    ["Whale", "Open ocean"],
+                    ["Seahorse", "Seagrass beds"],
+                    ["Octopus", "Rocky crevices"],
+                    ["Jellyfish", "Surface waters"],
+                    ["Anglerfish", "Deep sea floor"],
+                    ["Sea Turtle", "Tropical waters"],
+                    ["Dolphin", "Coastal waters"],
+                    ["Starfish", "Tide pools"],
+                    ["Hammerhead Shark", "Continental shelves"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Programming Languages & Uses",
+                pairs: [
+                    ["Python", "Data science & AI"],
+                    ["JavaScript", "Web development"],
+                    ["Java", "Enterprise applications"],
+                    ["C++", "Game engines & systems"],
+                    ["SQL", "Database queries"],
+                    ["Swift", "iOS apps"],
+                    ["Kotlin", "Android apps"],
+                    ["Ruby", "Web frameworks"],
+                    ["Go", "Cloud services"],
+                    ["Rust", "System programming"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Gemstones & Months",
+                pairs: [
+                    ["Garnet", "January"],
+                    ["Amethyst", "February"],
+                    ["Aquamarine", "March"],
+                    ["Diamond", "April"],
+                    ["Emerald", "May"],
+                    ["Pearl", "June"],
+                    ["Ruby", "July"],
+                    ["Peridot", "August"],
+                    ["Sapphire", "September"],
+                    ["Opal", "October"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Spices & Flavor Profiles",
+                pairs: [
+                    ["Cinnamon", "Sweet and warm"],
+                    ["Cumin", "Earthy and nutty"],
+                    ["Paprika", "Sweet and smoky"],
+                    ["Turmeric", "Earthy and bitter"],
+                    ["Ginger", "Spicy and pungent"],
+                    ["Cardamom", "Sweet and floral"],
+                    ["Cayenne", "Hot and fiery"],
+                    ["Nutmeg", "Warm and sweet"],
+                    ["Cloves", "Strong and aromatic"],
+                    ["Saffron", "Floral and earthy"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Paintings & Artists",
+                pairs: [
+                    ["Mona Lisa", "Leonardo da Vinci"],
+                    ["The Starry Night", "Vincent van Gogh"],
+                    ["The Scream", "Edvard Munch"],
+                    ["Guernica", "Pablo Picasso"],
+                    ["The Persistence of Memory", "Salvador Dalí"],
+                    ["The Creation of Adam", "Michelangelo"],
+                    ["Girl with a Pearl Earring", "Johannes Vermeer"],
+                    ["The Birth of Venus", "Sandro Botticelli"],
+                    ["American Gothic", "Grant Wood"],
+                    ["The Kiss", "Gustav Klimt"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Social Media Platforms & Features",
+                pairs: [
+                    ["Instagram", "Photo sharing & stories"],
+                    ["Twitter/X", "Microblogging & tweets"],
+                    ["Facebook", "Friends & timeline"],
+                    ["TikTok", "Short video content"],
+                    ["YouTube", "Video streaming"],
+                    ["LinkedIn", "Professional networking"],
+                    ["Snapchat", "Disappearing messages"],
+                    ["Pinterest", "Visual bookmarking"],
+                    ["Reddit", "Community forums"],
+                    ["Discord", "Voice & text chat"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Elements & Symbols",
+                pairs: [
+                    ["Hydrogen", "H"],
+                    ["Oxygen", "O"],
+                    ["Carbon", "C"],
+                    ["Nitrogen", "N"],
+                    ["Gold", "Au"],
+                    ["Silver", "Ag"],
+                    ["Iron", "Fe"],
+                    ["Helium", "He"],
+                    ["Sodium", "Na"],
+                    ["Calcium", "Ca"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Olympic Sports & Equipment",
+                pairs: [
+                    ["Swimming", "Pool & goggles"],
+                    ["Gymnastics", "Balance beam & mat"],
+                    ["Archery", "Bow & arrows"],
+                    ["Track", "Running shoes & track"],
+                    ["Basketball", "Ball & hoop"],
+                    ["Fencing", "Sword & mask"],
+                    ["Rowing", "Boat & oars"],
+                    ["Javelin", "Spear & field"],
+                    ["Cycling", "Bike & velodrome"],
+                    ["Boxing", "Gloves & ring"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "TV Shows & Episode Count",
+                pairs: [
+                    ["Breaking Bad", "62 episodes"],
+                    ["Game of Thrones", "73 episodes"],
+                    ["The Office (US)", "201 episodes"],
+                    ["Friends", "236 episodes"],
+                    ["The Sopranos", "86 episodes"],
+                    ["The Wire", "60 episodes"],
+                    ["Stranger Things", "42 episodes"],
+                    ["Lost", "121 episodes"]
+                ],
+                goals: { gold: 24, silver: 32, bronze: 40 }
+            },
+            {
+                name: "Sports Teams & Mascots",
+                pairs: [
+                    ["Philadelphia Eagles", "Swoop"],
+                    ["Chicago Bulls", "Benny the Bull"],
+                    ["Miami Heat", "Burnie"],
+                    ["Phoenix Suns", "Go the Gorilla"],
+                    ["Denver Nuggets", "Rocky"],
+                    ["San Diego Chicken", "The Famous Chicken"],
+                    ["Boston Celtics", "Lucky"],
+                    ["Toronto Raptors", "The Raptor"]
+                ],
+                goals: { gold: 24, silver: 32, bronze: 40 }
+            },
+            {
+                name: "Famous Singing Duos 2",
+                pairs: [
+                    ["Penn & Teller", "Magic duo"],
+                    ["Flight of the Conchords", "Jemaine & Bret"],
+                    ["Tenacious D", "Jack Black & Kyle Gass"],
+                    ["The Civil Wars", "Joy & John Paul"],
+                    ["She & Him", "Zooey & M. Ward"],
+                    ["The Kills", "Alison & Jamie"],
+                    ["Phantogram", "Sarah & Josh"],
+                    ["MGMT", "Andrew & Ben"],
+                    ["Capital Cities", "Ryan & Sebu"],
+                    ["Chromeo", "Dave & P-Thugg"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Words & Their Meanings",
+                pairs: [
+                    ["Serendipity", "Happy accident or discovery"],
+                    ["Ephemeral", "Lasting for a short time"],
+                    ["Ubiquitous", "Present everywhere"],
+                    ["Nostalgia", "Longing for the past"],
+                    ["Euphoria", "Intense happiness"],
+                    ["Melancholy", "Deep sadness"],
+                    ["Resilient", "Able to recover quickly"],
+                    ["Candid", "Honest and straightforward"],
+                    ["Ambiguous", "Unclear or uncertain"],
+                    ["Eloquent", "Fluent and persuasive speech"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Words & Their Meanings 2",
+                pairs: [
+                    ["Pragmatic", "Practical and realistic"],
+                    ["Altruistic", "Selflessly helping others"],
+                    ["Cynical", "Distrusting of motives"],
+                    ["Verbose", "Using too many words"],
+                    ["Tenacious", "Persistent and determined"],
+                    ["Eccentric", "Unconventional and strange"],
+                    ["Meticulous", "Very careful and precise"],
+                    ["Boisterous", "Noisy and energetic"],
+                    ["Tranquil", "Calm and peaceful"],
+                    ["Vigorous", "Strong and energetic"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Weird Words & Meanings 3",
+                pairs: [
+                    ["Defenestration", "Throwing out of a window"],
+                    ["Petrichor", "Smell of rain on dry earth"],
+                    ["Limerence", "State of being in love"],
+                    ["Sonder", "Realization others have complex lives"],
+                    ["Hiraeth", "Longing for Welsh homeland"],
+                    ["Schadenfreude", "Joy from others' misfortune"],
+                    ["Wanderlust", "Strong desire to travel"],
+                    ["Kintsugi", "Art of repairing with gold"],
+                    ["Hygge", "Cozy contentment"],
+                    ["Ubuntu", "I am because we are"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Weird Words & Meanings 4",
+                pairs: [
+                    ["Phosphenes", "Seeing stars when eyes closed"],
+                    ["Saccade", "Rapid eye movement"],
+                    ["Apricity", "Warmth of winter sun"],
+                    ["Vellichor", "Wistfulness of used bookstores"],
+                    ["Zenosyne", "Sense time keeps accelerating"],
+                    ["Mamihlapinatapai", "Meaningful look between people"],
+                    ["Fernweh", "Longing to be elsewhere"],
+                    ["Mångata", "Moon's road on water"],
+                    ["Meraki", "Doing with soul and love"],
+                    ["Tsundoku", "Buying books but not reading"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Big Numbers in Words",
+                pairs: [
+                    ["1,000", "One Thousand"],
+                    ["1,000,000", "One Million"],
+                    ["1,000,000,000", "One Billion"],
+                    ["1,000,000,000,000", "One Trillion"],
+                    ["10,000", "Ten Thousand"],
+                    ["100,000", "One Hundred Thousand"],
+                    ["1,000,000,000,000,000", "One Quadrillion"],
+                    ["500,000", "Five Hundred Thousand"],
+                    ["7,500,000,000", "Seven Point Five Billion"],
+                    ["3,000,000", "Three Million"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Characters & Famous Catchphrases",
+                pairs: [
+                    ["Darth Vader", "I am your father"],
+                    ["Forrest Gump", "Life is like a box of chocolates"],
+                    ["Terminator", "I'll be back"],
+                    ["Dirty Harry", "Make my day"],
+                    ["Jerry Maguire", "Show me the money"],
+                    ["Apollo Creed", "Yo Adrian!"],
+                    ["Gollum", "My precious"],
+                    ["Buzz Lightyear", "To infinity and beyond"],
+                    ["Tony Montana", "Say hello to my little friend"],
+                    ["Jack Torrance", "Here's Johnny!"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Characters & Famous Catchphrases 2",
+                pairs: [
+                    ["Homer Simpson", "D'oh!"],
+                    ["Bugs Bunny", "What's up, Doc?"],
+                    ["Bart Simpson", "Eat my shorts"],
+                    ["The Fonz", "Ayyy!"],
+                    ["Sheldon Cooper", "Bazinga!"],
+                    ["Austin Powers", "Yeah, baby!"],
+                    ["Borat", "Very nice!"],
+                    ["Mr. Burns", "Excellent"],
+                    ["Joey Tribbiani", "How you doin'?"],
+                    ["Chandler Bing", "Could I BE any more..."]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Famous Late Night Shows & Hosts",
+                pairs: [
+                    ["The Tonight Show", "Jimmy Fallon"],
+                    ["Late Night", "Seth Meyers"],
+                    ["The Late Show", "Stephen Colbert"],
+                    ["Jimmy Kimmel Live!", "Jimmy Kimmel"],
+                    ["Late Late Show", "James Corden"],
+                    ["Last Week Tonight", "John Oliver"],
+                    ["The Daily Show", "Trevor Noah"],
+                    ["Real Time", "Bill Maher"],
+                    ["Full Frontal", "Samantha Bee"],
+                    ["Conan", "Conan O'Brien"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Weird Words & Meanings",
+                pairs: [
+                    ["Petrichor", "Smell of earth after rain"],
+                    ["Sonder", "Realizing everyone has complex lives"],
+                    ["Defenestration", "Throwing someone out a window"],
+                    ["Bumfuzzle", "To confuse or perplex"],
+                    ["Lollygag", "To spend time aimlessly"],
+                    ["Flibbertigibbet", "Frivolous chattering person"],
+                    ["Gobsmacked", "Utterly astonished"],
+                    ["Kerfuffle", "Commotion or fuss"],
+                    ["Nincompoop", "Foolish or stupid person"],
+                    ["Shenanigans", "Secret or dishonest activity"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            },
+            {
+                name: "Weird Words & Meanings 2",
+                pairs: [
+                    ["Brouhaha", "Noisy and overexcited reaction"],
+                    ["Discombobulate", "To confuse or disconcert"],
+                    ["Hullabaloo", "Commotion or uproar"],
+                    ["Bamboozle", "To fool or cheat someone"],
+                    ["Cattywampus", "Askew or diagonally"],
+                    ["Flummox", "To perplex someone"],
+                    ["Skedaddle", "To depart quickly"],
+                    ["Widdershins", "In counterclockwise direction"],
+                    ["Bumbershoot", "Old term for umbrella"],
+                    ["Collywobbles", "Stomach pain or butterflies"]
+                ],
+                goals: { gold: 30, silver: 40, bronze: 50 }
+            }
+        ];
+
+        // Calendar functions
+        function openCalendar() {
+            const overlay = document.getElementById('calendar-overlay');
+            const list = document.getElementById('calendar-list');
+            
+            list.innerHTML = '';
+            
+            themes.forEach((theme, index) => {
+                const isCurrent = index === currentLevelIndex;
+                
+                const item = document.createElement('div');
+                item.className = `calendar-week${isCurrent ? ' current' : ''}`;
+                
+                let badge = '';
+                if (isCurrent) {
+                    badge = '<span class="cw-badge current">Current</span>';
+                }
+                
+                item.innerHTML = `
+                    <div class="cw-info">
+                        <div class="cw-week">${theme.name}</div>
+                        <div class="cw-number">Week ${index + 1}</div>
+                    </div>
+                    ${badge}
+                `;
+                
+                item.addEventListener('click', () => selectWeek(index));
+                list.appendChild(item);
+            });
+            
+            overlay.classList.add('active');
+        }
+
+        function closeCalendar(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('calendar-overlay').classList.remove('active');
+        }
+
+        function selectWeek(weekIndex) {
+            closeCalendar();
+            currentLevelIndex = weekIndex;
+            newGame();
+        }
+
+        let currentTheme;
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let flipCount = 0;
+        let canFlip = true;
+
+        function shuffle(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function newGame() {
+            // Use current level index instead of random
+            currentTheme = themes[currentLevelIndex];
+            
+            // Validate theme - check for duplicate values
+            const allValues = currentTheme.pairs.flat();
+            const duplicates = allValues.filter((item, index) => allValues.indexOf(item) !== index);
+            if (duplicates.length > 0) {
+                console.warn(`Warning: Theme "${currentTheme.name}" has duplicate values:`, duplicates);
+            }
+            
+            // Reset game state
+            matchedPairs = 0;
+            flipCount = 0;
+            flippedCards = [];
+            canFlip = true;
+            
+            // Update UI
+            document.getElementById('themeTitle').textContent = `Week ${currentLevelIndex + 1}: ${currentTheme.name}`;
+            document.getElementById('flips').textContent = '0';
+            document.getElementById('pairs').textContent = '0/10';
+            document.getElementById('gold').textContent = `GOLD: ${currentTheme.goals.gold}`;
+            document.getElementById('silver').textContent = `SILVER: ${currentTheme.goals.silver}`;
+            document.getElementById('bronze').textContent = `BRONZE: ${currentTheme.goals.bronze}`;
+            
+            // Reset goal highlights
+            document.getElementById('gold').classList.remove('achieved');
+            document.getElementById('silver').classList.remove('achieved');
+            document.getElementById('bronze').classList.remove('achieved');
+            
+            // Hide win message
+            document.getElementById('winMessage').classList.remove('show');
+            document.getElementById('overlay').classList.remove('show');
+            
+            // Create card array - store unique card IDs for proper matching
+            cards = [];
+            currentTheme.pairs.forEach((pair, index) => {
+                const cardId1 = `pair${index}_card0`;
+                const cardId2 = `pair${index}_card1`;
+                cards.push({ id: cardId1, value: pair[0], matchWith: cardId2 });
+                cards.push({ id: cardId2, value: pair[1], matchWith: cardId1 });
+            });
+            
+            // Shuffle cards
+            cards = shuffle(cards);
+            
+            // Render board
+            renderBoard();
+        }
+        
+        function renderBoard() {
+            const board = document.getElementById('gameBoard');
+            board.innerHTML = '';
+            
+            cards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.dataset.cardId = card.id;
+                cardElement.dataset.matchWith = card.matchWith;
+                cardElement.innerHTML = `
+                    <div class="card-face card-back">?</div>
+                    <div class="card-face card-front">${card.value}</div>
+                `;
+                cardElement.addEventListener('click', () => flipCard(cardElement, card));
+                board.appendChild(cardElement);
+            });
+        }
+
+        function flipCard(element, card) {
+            if (!canFlip || element.classList.contains('flipped') || element.classList.contains('matched')) {
+                return;
+            }
+            
+            element.classList.add('flipped');
+            flippedCards.push({ element, card });
+            
+            flipCount++;
+            document.getElementById('flips').textContent = flipCount;
+            updateGoals();
+            
+            if (flippedCards.length === 2) {
+                canFlip = false;
+                setTimeout(checkMatch, 800);
+            }
+        }
+
+        function checkMatch() {
+            const [first, second] = flippedCards;
+            
+            // Check if the cards are a valid match by checking their IDs
+            if (first.card.matchWith === second.card.id) {
+                // Match!
+                first.element.classList.add('matched');
+                second.element.classList.add('matched');
+                matchedPairs++;
+                document.getElementById('pairs').textContent = `${matchedPairs}/10`;
+                
+                if (matchedPairs === 10) {
+                    setTimeout(showWin, 500);
+                }
+            } else {
+                // No match
+                first.element.classList.remove('flipped');
+                second.element.classList.remove('flipped');
+            }
+            
+            flippedCards = [];
+            canFlip = true;
+        }
+
+        function updateGoals() {
+            if (flipCount <= currentTheme.goals.gold) {
+                document.getElementById('gold').classList.add('achieved');
+            }
+            if (flipCount <= currentTheme.goals.silver) {
+                document.getElementById('silver').classList.add('achieved');
+            }
+            if (flipCount <= currentTheme.goals.bronze) {
+                document.getElementById('bronze').classList.add('achieved');
+            }
+        }
+
+        function showWin() {
+            let medal = '';
+            let message = '';
+            
+            if (flipCount <= currentTheme.goals.gold) {
+                medal = 'GOLD';
+                message = `Amazing! Gold medal with ${flipCount} flips!`;
+            } else if (flipCount <= currentTheme.goals.silver) {
+                medal = 'SILVER';
+                message = `Great job! Silver medal with ${flipCount} flips!`;
+            } else if (flipCount <= currentTheme.goals.bronze) {
+                medal = 'BRONZE';
+                message = `Well done! Bronze medal with ${flipCount} flips!`;
+            } else {
+                medal = 'COMPLETE';
+                message = `Completed in ${flipCount} flips! Try for a medal next time!`;
+            }
+            
+            document.getElementById('medal').textContent = medal;
+            document.getElementById('winText').textContent = message;
+            document.getElementById('winMessage').classList.add('show');
+            document.getElementById('overlay').classList.add('show');
+            
+            // Trigger confetti
+            createConfetti();
+        }
+        
+        function createConfetti() {
+            // DOM2D gold/silver theme colors
+            const colors = ['#D4AF37', '#FFD700', '#C0C0C0', '#888888'];
+            const confettiCount = 100;
+            
+            // Get the game container to spawn confetti from its top
+            const gameContainer = document.querySelector('.container') || document.querySelector('body');
+            const rect = gameContainer.getBoundingClientRect();
+            
+            for (let i = 0; i < confettiCount; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.position = 'fixed';
+                    confetti.style.left = (rect.left + Math.random() * rect.width) + 'px';
+                    confetti.style.top = rect.top + 'px';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.width = (Math.random() * 10 + 5) + 'px';
+                    confetti.style.height = (Math.random() * 10 + 5) + 'px';
+                    confetti.style.opacity = Math.random() * 0.5 + 0.5;
+                    confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                    confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    confetti.style.zIndex = '10000';
+                    
+                    document.body.appendChild(confetti);
+                    
+                    // Remove confetti after animation completes
+                    setTimeout(() => confetti.remove(), 4000);
+                }, i * 15); // Stagger the confetti spawning
+            }
+        }
+        
+        function shareScore() {
+            const medal = flipCount <= currentTheme.goals.gold ? 'GOLD' : 
+                         flipCount <= currentTheme.goals.silver ? 'SILVER' : 
+                         flipCount <= currentTheme.goals.bronze ? 'BRONZE' : 'COMPLETE';
+            const shareText = `I completed ${currentTheme.name} in ${flipCount} flips! ${medal}\n\nPlay MEMORI at dom2d.com/memory`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'MEMORI Score',
+                    text: shareText
+                }).catch(() => {
+                    copyToClipboard(shareText);
+                });
+            } else {
+                copyToClipboard(shareText);
+            }
+        }
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied! ✓';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Start game on load
+        newGame();
+    </script>
+</body>
+</html>

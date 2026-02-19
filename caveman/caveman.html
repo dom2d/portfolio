@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Caveman Movies — DOM2D</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  :root {
+    --gold: #D4AF37;
+    --gold-dim: #B8972E;
+    --gold-bright: #FFD700;
+    --orange: #FF8C42;
+    --orange-dim: #E67729;
+    --bg: #0a0a0a;
+    --bg2: rgba(255,255,255,0.04);
+    --text: #e8e8e8;
+    --text-dim: #888;
+    --red: #cc4444;
+    --mono: 'DM Mono', monospace;
+    --display: 'Bebas Neue', cursive;
+  }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 10px;
+  }
+  
+  .container {
+    width: 100%;
+    max-width: 640px;
+  }
+  
+  .game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  
+  .game-logo {
+    font-family: var(--display);
+    font-size: clamp(32px, 8vw, 52px);
+    letter-spacing: 6px;
+    color: var(--orange);
+    text-shadow: 0 0 40px rgba(255,140,66,0.6);
+  }
+  
+  .debug-buttons {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .btn-icon {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: var(--text-dim);
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .btn-icon:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: var(--text);
+    color: var(--text);
+  }
+  
+  .btn-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  /* Calendar overlay */
+  .calendar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  
+  .calendar-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  
+  .calendar-modal {
+    background: #111;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 360px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  
+  .calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .calendar-title {
+    font-family: var(--display);
+    font-size: 24px;
+    color: var(--text);
+    letter-spacing: 3px;
+  }
+  
+  .btn-close {
+    background: transparent;
+    border: none;
+    color: #666;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 4px 8px;
+    line-height: 1;
+  }
+  
+  .btn-close:hover {
+    color: var(--text);
+  }
+  
+  .calendar-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .calendar-week {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  
+  .calendar-week:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.2);
+  }
+  
+  .calendar-week.current {
+    border-color: var(--gold);
+    background: rgba(212,175,55,0.1);
+  }
+  
+  .calendar-week.future {
+    opacity: 0.6;
+    border-style: dashed;
+  }
+  
+  .calendar-week.future:hover {
+    opacity: 1;
+  }
+  
+  .cw-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .cw-week {
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 500;
+  }
+  
+  .cw-date {
+    font-size: 11px;
+    color: #666;
+  }
+  
+  .cw-badge {
+    font-size: 9px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  
+  .cw-badge.current {
+    background: var(--gold);
+    color: var(--bg);
+  }
+  
+  .cw-badge.future {
+    background: rgba(255,255,255,0.1);
+    color: #888;
+  }
+  
+  .week-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #555;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  
+  .game-board {
+    background: rgba(255,255,255,0.015);
+    border: 1px solid rgba(212,175,55,0.07);
+    border-radius: 11px;
+    padding: 20px;
+  }
+  
+  .instructions {
+    text-align: center;
+    margin-bottom: 18px;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+  }
+  
+  .counter {
+    text-align: center;
+    margin-bottom: 16px;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #555;
+  }
+  
+  .clues-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .clue-card {
+    background: var(--bg2);
+    border: 1px solid rgba(212,175,55,0.07);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    transition: all 0.3s;
+    opacity: 0.3;
+  }
+  
+  .clue-card.revealed {
+    opacity: 1;
+    border-color: rgba(212,175,55,0.15);
+  }
+  
+  .clue-card:not(.revealed) .clue-text {
+    visibility: hidden;
+  }
+  
+  .clue-emoji {
+    font-size: 28px;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  
+  .clue-text {
+    flex: 1;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #bbb;
+  }
+  
+  .answer-section {
+    margin-top: 20px;
+  }
+  
+  .input-wrapper {
+    position: relative;
+    margin-bottom: 12px;
+  }
+  
+  .answer-input {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid rgba(212,175,55,0.15);
+    border-radius: 8px;
+    padding: 12px 100px 12px 14px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+  
+  .answer-input::placeholder {
+    color: #555;
+    text-transform: none;
+    font-size: 12px;
+  }
+  
+  .answer-input:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 20px rgba(212,175,55,0.15);
+  }
+  
+  .submit-btn {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--gold);
+    color: var(--bg);
+    border: none;
+    border-radius: 6px;
+    padding: 8px 20px;
+    font-family: var(--display);
+    font-size: 18px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  
+  .submit-btn:hover {
+    transform: translateY(-50%) translateY(-2px);
+    box-shadow: 0 0 20px rgba(212,175,55,0.4);
+  }
+  
+  .autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #111;
+    border: 1px solid rgba(212,175,55,0.2);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 2000;
+    display: none;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+  }
+  
+  .autocomplete-dropdown.show {
+    display: block;
+  }
+  
+  .autocomplete-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 12px;
+    color: #bbb;
+    transition: all 0.15s;
+  }
+  
+  .autocomplete-item:hover {
+    background: rgba(212,175,55,0.08);
+    color: var(--gold);
+  }
+  
+  .autocomplete-item:last-child {
+    border-bottom: none;
+  }
+  
+  .guesses-section {
+    background: rgba(212,175,55,0.03);
+    border: 1px solid rgba(212,175,55,0.08);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  
+  .guesses-title {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #555;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+  
+  .guess-item {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 8px 12px;
+    border-radius: 5px;
+    margin-bottom: 6px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  
+  .guess-item:last-child {
+    margin-bottom: 0;
+  }
+  
+
+// Weekly Levels Structure
+const WEEKLY_LEVELS = ENDJS
+cat /home/claude/weekly_levels.json >> /home/claude/calendar-script.js
+cat >> /home/claude/calendar-script.js << 'ENDJS'
+;
+
+// Additional movie titles for autocomplete
+const additionalMovieTitles = [
+  "THE GODFATHER", "THE GODFATHER PART II", "THE DARK KNIGHT", "PULP FICTION", "SCHINDLERS LIST",
+  "FORREST GUMP", "INCEPTION", "FIGHT CLUB", "THE MATRIX", "GOODFELLAS",
+  "THE SILENCE OF THE LAMBS", "SAVING PRIVATE RYAN", "INTERSTELLAR", "THE GREEN MILE", "SE7EN",
+  "THE USUAL SUSPECTS", "CITY OF GOD", "LIFE IS BEAUTIFUL", "THE DEPARTED", "GLADIATOR",
+  "THE PRESTIGE", "THE LION KING", "BACK TO THE FUTURE", "WHIPLASH",
+  "PSYCHO", "CASABLANCA", "REAR WINDOW", "ALIEN", "APOCALYPSE NOW",
+  "MEMENTO", "RAIDERS OF THE LOST ARK", "DJANGO UNCHAINED", "THE SHINING",
+  "AVENGERS ENDGAME", "SPIDER-MAN INTO THE SPIDER-VERSE", "AVENGERS INFINITY WAR", "JOKER", "COCO",
+  "INSIDE OUT", "UP", "WALL-E", "RATATOUILLE", "MONSTERS INC",
+  "THE INCREDIBLES", "FINDING NEMO", "BRAVE", "CARS", "A BUGS LIFE",
+  "SOUL", "TURNING RED", "LUCA", "ENCANTO", "MOANA",
+  "BIG HERO 6", "WRECK-IT RALPH", "ZOOTOPIA", "TANGLED", "PRINCESS AND THE FROG",
+  "MULAN", "POCAHONTAS", "HERCULES", "TARZAN", "ALADDIN",
+  "THE LITTLE MERMAID", "BEAUTY AND THE BEAST", "CINDERELLA",
+  "SNOW WHITE", "PINOCCHIO", "DUMBO", "BAMBI", "FANTASIA",
+  "THE JUNGLE BOOK", "101 DALMATIANS", "LADY AND THE TRAMP", "PETER PAN", "ALICE IN WONDERLAND",
+  "SHREK", "SHREK 2", "KUNG FU PANDA", "HOW TO TRAIN YOUR DRAGON", "MADAGASCAR",
+  "DESPICABLE ME", "MINIONS", "THE SECRET LIFE OF PETS", "ICE AGE", "THE LEGO MOVIE",
+  "SPIRITED AWAY", "MY NEIGHBOR TOTORO", "PRINCESS MONONOKE", "HOWLS MOVING CASTLE",
+  "TOY STORY", "TOY STORY 2", "TOY STORY 3", "TOY STORY 4", "FINDING DORY",
+  "FROZEN", "FROZEN 2", "STAR WARS", "THE EMPIRE STRIKES BACK", "RETURN OF THE JEDI",
+  "JURASSIC PARK", "JURASSIC WORLD", "E.T.", "JAWS", "INDIANA JONES",
+  "BACK TO THE FUTURE", "CATCH ME IF YOU CAN", "HARRY POTTER",
+  "LORD OF THE RINGS", "THE FELLOWSHIP OF THE RING", "THE TWO TOWERS", "THE RETURN OF THE KING",
+  "THE HOBBIT", "THE WIZARD OF OZ", "GONE WITH THE WIND", "THE SOUND OF MUSIC",
+  "TITANIC", "AVATAR", "SPIDER-MAN", "IRON MAN", "THE AVENGERS",
+  "CAPTAIN AMERICA", "THOR", "BLACK PANTHER", "GUARDIANS OF THE GALAXY",
+  "THE BATMAN", "BATMAN BEGINS", "THE DARK KNIGHT RISES", "SUPERMAN",
+  "WONDER WOMAN", "AQUAMAN", "FAST AND FURIOUS", "MISSION IMPOSSIBLE",
+  "TOP GUN", "TOP GUN MAVERICK", "DIE HARD", "TERMINATOR", "PREDATOR",
+  "BLADE RUNNER", "MAD MAX FURY ROAD", "JOHN WICK", "THE HANGOVER",
+  "SUPERBAD", "BRIDESMAIDS", "STEP BROTHERS", "DUMB AND DUMBER", "GROUNDHOG DAY",
+  "GHOSTBUSTERS", "GET OUT", "A QUIET PLACE", "HEREDITARY", "THE CONJURING"
+];
+
+// Get all movie titles from all weeks for autocomplete
+function getAllMovieTitles() {
+  const weekMovies = WEEKLY_LEVELS.flatMap(week => week.movies.map(m => m.title));
+  return [...new Set([...weekMovies, ...additionalMovieTitles])].sort();
+}
+
+const allMovieTitles = getAllMovieTitles();
+
+// Game state
+let selectedWeekIndex = null;
+let CURRENT_WEEK_INDEX = 0;
+let WEEK_NUMBER = 1;
+let currentWeekMovies = [];
+let currentMovie;
+let currentClueIndex = 0;
+let guesses = [];
+let gameOver = false;
+
+const cavemanEmojis = ['🧔', '👨', '👴', '🧓', '👨‍🦰', '👨‍🦱', '👨‍🦲', '👨‍🦳'];
+
+// Helper: Format date for display
+function formatDate(date) {
+  const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", 
+                  "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+  return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+}
+
+// Get the natural current week index based on today's date
+function getNaturalCurrentWeekIndex() {
+  const now = new Date();
+  let currentIndex = 0;
+  let currentWeekStart = null;
+  
+  for (let i = 0; i < WEEKLY_LEVELS.length; i++) {
+    const weekStart = new Date(WEEKLY_LEVELS[i].weekStart + "T00:00:00");
+    if (weekStart <= now) {
+      if (!currentWeekStart || weekStart > currentWeekStart) {
+        currentWeekStart = weekStart;
+        currentIndex = i;
+      }
+    }
+  }
+  
+  return currentIndex;
+}
+
+// Load a specific week's data
+function loadWeek(weekIndex = null) {
+  if (weekIndex === null) {
+    weekIndex = getNaturalCurrentWeekIndex();
+  }
+  
+  selectedWeekIndex = weekIndex;
+  CURRENT_WEEK_INDEX = weekIndex;
+  WEEK_NUMBER = weekIndex + 1;
+  
+  const level = WEEKLY_LEVELS[weekIndex];
+  currentWeekMovies = level.movies || [];
+  
+  // Update week label
+  document.getElementById('week-label').textContent = `WEEK ${WEEK_NUMBER}`;
+}
+
+// Calendar functions
+function openCalendar() {
+  const overlay = document.getElementById('calendar-overlay');
+  const list = document.getElementById('calendar-list');
+  const now = new Date();
+  const naturalCurrentIndex = getNaturalCurrentWeekIndex();
+  
+  list.innerHTML = '';
+  
+  WEEKLY_LEVELS.forEach((level, index) => {
+    const weekStart = new Date(level.weekStart + "T00:00:00");
+    const isFuture = weekStart > now;
+    const isCurrent = index === naturalCurrentIndex;
+    const theme = level.theme || "Week " + (index + 1);
+    
+    const item = document.createElement('div');
+    item.className = `calendar-week${isCurrent ? ' current' : ''}${isFuture ? ' future' : ''}`;
+    
+    let badge = '';
+    if (isCurrent) {
+      badge = '<span class="cw-badge current">Current</span>';
+    } else if (isFuture) {
+      badge = '<span class="cw-badge future">Future</span>';
+    }
+    
+    item.innerHTML = `
+      <div class="cw-info">
+        <div class="cw-week">Week ${index + 1}</div>
+        <div class="cw-date">${formatDate(weekStart)}</div>
+      </div>
+      ${badge}
+    `;
+    
+    item.addEventListener('click', () => selectWeek(index));
+    list.appendChild(item);
+  });
+  
+  overlay.classList.add('active');
+}
+
+function closeCalendar(event) {
+  if (event && event.target !== event.currentTarget) return;
+  document.getElementById('calendar-overlay').classList.remove('active');
+}
+
+function selectWeek(weekIndex) {
+  closeCalendar();
+  loadWeek(weekIndex);
+  newGame();
+}
+
+// Game functions
+function newGame() {
+  if (currentWeekMovies.length === 0) {
+    alert('No movies available for this week!');
+    return;
+  }
+  
+  currentMovie = currentWeekMovies[Math.floor(Math.random() * currentWeekMovies.length)];
+  currentClueIndex = 0;
+  guesses = [];
+  gameOver = false;
+  
+  displayClues();
+  updateCounter();
+  document.getElementById('answer').value = '';
+  document.getElementById('result').innerHTML = '';
+  document.getElementById('result').className = 'result';
+  
+  const resultScreen = document.getElementById('result-screen');
+  if (resultScreen) resultScreen.remove();
+  
+  document.getElementById('give-up-btn').classList.add('hidden');
+  document.getElementById('guesses-section').classList.add('hidden');
+  document.getElementById('guesses-list').innerHTML = '';
+  document.getElementById('autocomplete').classList.remove('show');
+  document.getElementById('answer').focus();
+}
+
+function displayClues() {
+  const grid = document.getElementById('clues-grid');
+  grid.innerHTML = '';
+  
+  currentMovie.clues.forEach((clue, index) => {
+    const card = document.createElement('div');
+    card.className = 'clue-card';
+    if (index <= currentClueIndex || gameOver) {
+      card.classList.add('revealed');
+    }
+    
+    card.innerHTML = `
+      <div class="clue-emoji">${cavemanEmojis[index % cavemanEmojis.length]}</div>
+      <div class="clue-text">${clue}</div>
+    `;
+    
+    grid.appendChild(card);
+  });
+}
+
+function updateCounter() {
+  document.getElementById('counter').textContent = `Cavemen Clues: ${currentClueIndex + 1}/6`;
+}
+
+// Autocomplete
+const answerInput = document.getElementById('answer');
+const autocompleteDiv = document.getElementById('autocomplete');
+
+answerInput.addEventListener('input', function() {
+  const value = this.value.trim().toUpperCase();
+  
+  if (value.length < 2) {
+    autocompleteDiv.classList.remove('show');
+    return;
+  }
+  
+  const matches = allMovieTitles.filter(title => title.includes(value)).slice(0, 10);
+  
+  if (matches.length === 0) {
+    autocompleteDiv.classList.remove('show');
+    return;
+  }
+  
+  autocompleteDiv.innerHTML = matches.map(title => 
+    `<div class="autocomplete-item" onclick="selectMovie('${title.replace(/'/g, "\\'")}')">${title}</div>`
+  ).join('');
+  
+  autocompleteDiv.classList.add('show');
+});
+
+answerInput.addEventListener('blur', function() {
+  setTimeout(() => autocompleteDiv.classList.remove('show'), 200);
+});
+
+function selectMovie(title) {
+  document.getElementById('answer').value = title;
+  autocompleteDiv.classList.remove('show');
+  document.getElementById('answer').focus();
+}
+
+function checkAnswer() {
+  if (gameOver) return;
+  
+  const answer = document.getElementById('answer').value.trim().toUpperCase();
+  const result = document.getElementById('result');
+  
+  if (!answer) {
+    if (currentClueIndex < 5) {
+      currentClueIndex++;
+      displayClues();
+      updateCounter();
+    }
+    return;
+  }
+  
+  document.getElementById('give-up-btn').classList.remove('hidden');
+  
+  if (!guesses.includes(answer)) {
+    guesses.push(answer);
+    updateGuessesList();
+  }
+  
+  if (answer === currentMovie.title) {
+    result.className = 'result correct show';
+    result.textContent = `🎉 CORRECT! THE MOVIE IS "${currentMovie.title}"!`;
+    gameOver = true;
+    displayClues();
+    document.getElementById('give-up-btn').classList.add('hidden');
+    showConfetti();
+    showResultScreen();
+  } else {
+    result.className = 'result incorrect show';
+    result.textContent = `✗ NOPE! TRY AGAIN!`;
+    
+    document.getElementById('answer').value = '';
+    
+    if (currentClueIndex < 5) {
+      setTimeout(() => {
+        currentClueIndex++;
+        displayClues();
+        updateCounter();
+        result.innerHTML = '';
+        result.className = 'result';
+      }, 1000);
+    }
+  }
+}
+
+function updateGuessesList() {
+  const guessesList = document.getElementById('guesses-list');
+  const guessesSection = document.getElementById('guesses-section');
+  
+  guessesSection.classList.remove('hidden');
+  guessesList.innerHTML = guesses.map(guess => 
+    `<div class="guess-item">${guess}</div>`
+  ).join('');
+}
+
+function giveUp() {
+  if (gameOver) return;
+  
+  gameOver = true;
+  document.getElementById('give-up-btn').classList.add('hidden');
+  const result = document.getElementById('result');
+  result.className = 'result correct show';
+  result.textContent = `💡 THE ANSWER WAS "${currentMovie.title}"`;
+  displayClues();
+  showResultScreen();
+}
+
+function showConfetti() {
+  const colors = ['#D4AF37', '#FFD700', '#C0C0C0', '#888888'];
+  const board = document.querySelector('.game-board');
+  
+  for (let i = 0; i < 40; i++) {
+    setTimeout(() => {
+      const confetti = document.createElement('div');
+      confetti.className = 'confetti';
+      confetti.style.left = Math.random() * 100 + '%';
+      confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.animationDelay = Math.random() * 0.5 + 's';
+      confetti.style.animationDuration = Math.random() * 2 + 2 + 's';
+      board.appendChild(confetti);
+      
+      setTimeout(() => confetti.remove(), 3000);
+    }, i * 30);
+  }
+}
+
+function showResultScreen() {
+  const answerSection = document.querySelector('.answer-section');
+  let resultScreen = document.getElementById('result-screen');
+  
+  if (!resultScreen) {
+    resultScreen = document.createElement('div');
+    resultScreen.id = 'result-screen';
+    answerSection.appendChild(resultScreen);
+  }
+  
+  resultScreen.className = 'result-screen';
+  resultScreen.innerHTML = `
+    <div class="result-title">PUZZLE COMPLETE</div>
+    <div class="result-stats">
+      Movie: <strong>${currentMovie.title}</strong><br>
+      Clues Used: <span class="stat-number">${currentClueIndex + 1}</span>/6<br>
+      Guesses: <span class="stat-number">${guesses.length}</span>
+    </div>
+    <button class="share-btn" onclick="shareResults()">SHARE</button>
+  `;
+}
+
+function shareResults() {
+  const shareText = `🦴 Caveman Movies - Week ${WEEK_NUMBER}
+Movie: ${currentMovie.title}
+Clues: ${currentClueIndex + 1}/6
+Guesses: ${guesses.length}
+
+Can you do better?`;
+
+  const shareBtn = document.querySelector('.share-btn');
+  const originalText = shareBtn.textContent;
+  
+  if (navigator.share) {
+    navigator.share({
+      title: 'Caveman Movies',
+      text: shareText
+    }).then(() => {
+      shareBtn.textContent = '✓ SHARED!';
+      setTimeout(() => shareBtn.textContent = originalText, 2000);
+    }).catch(() => {
+      copyToClipboard(shareText);
+      shareBtn.textContent = '✓ COPIED!';
+      setTimeout(() => shareBtn.textContent = originalText, 2000);
+    });
+  } else {
+    copyToClipboard(shareText);
+    shareBtn.textContent = '✓ COPIED!';
+    setTimeout(() => shareBtn.textContent = originalText, 2000);
+  }
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).catch(() => {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+  });
+}
+
+document.getElementById('answer').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') checkAnswer();
+});
+
+// Initialize on load
+loadWeek(null);
+newGame();
+</script></body></html>
